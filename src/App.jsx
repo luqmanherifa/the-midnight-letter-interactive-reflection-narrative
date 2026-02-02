@@ -1,5 +1,6 @@
 import { useStoryNavigation } from "./useStoryNavigation";
 import {
+  TitleScreen,
   TextContent,
   ChoiceButtons,
   BottomControls,
@@ -12,6 +13,7 @@ export default function App() {
     screenKey,
     isChoice,
     isEnd,
+    isTitle,
     visibleLines,
     choiceSelected,
     showTap,
@@ -20,7 +22,6 @@ export default function App() {
     currentId,
     handleNext,
     handleChoice,
-    handleEnd,
     toggleChoices,
   } = useStoryNavigation();
 
@@ -30,7 +31,9 @@ export default function App() {
     <div className="min-h-screen bg-stone-950 relative">
       <div className="min-h-screen flex flex-col items-center justify-center px-6 pointer-events-none">
         <div key={screenKey} className="w-full max-w-sm text-center">
-          {(!isChoice || !showChoices) && (
+          {isTitle && <TitleScreen />}
+
+          {!isTitle && (!isChoice || !showChoices) && (
             <TextContent lines={screen.lines} visibleLines={visibleLines} />
           )}
 
@@ -48,16 +51,19 @@ export default function App() {
         showTap={showTap}
         isChoice={isChoice}
         isEnd={isEnd}
+        isTitle={isTitle}
         currentId={currentId}
         showChoices={showChoices}
         choiceSelected={choiceSelected}
         choiceReady={choiceReady}
         onNext={handleNext}
         onToggleChoices={toggleChoices}
-        onEnd={handleEnd}
       />
 
-      {!isChoice && !isEnd && showTap && <TapOverlay onNext={handleNext} />}
+      {!isChoice && !isEnd && !isTitle && showTap && (
+        <TapOverlay onNext={handleNext} />
+      )}
+      {isTitle && <TapOverlay onNext={handleNext} />}
     </div>
   );
 }

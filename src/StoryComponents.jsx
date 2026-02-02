@@ -1,3 +1,18 @@
+export function TitleScreen() {
+  return (
+    <div className="text-center">
+      <h1 className="text-2xl text-stone-200 tracking-widest mb-6 font-light">
+        The Midnight Letter
+      </h1>
+      <p className="text-sm text-stone-400 tracking-wide leading-relaxed">
+        Surat untuk bagian dirimu
+        <br />
+        yang terus berjalan di kegelapan
+      </p>
+    </div>
+  );
+}
+
 export function TextContent({ lines, visibleLines }) {
   return (
     <>
@@ -49,17 +64,26 @@ export function BottomControls({
   showTap,
   isChoice,
   isEnd,
+  isTitle,
   currentId,
   showChoices,
   choiceSelected,
   choiceReady,
   onNext,
   onToggleChoices,
-  onEnd,
 }) {
   return (
     <div className="fixed inset-x-0 bottom-0 pb-24 flex justify-center pointer-events-auto">
-      {showTap && !isChoice && !isEnd && (
+      {isTitle && (
+        <button
+          onClick={onNext}
+          className="cursor-pointer text-sm text-stone-300"
+        >
+          mulai
+        </button>
+      )}
+
+      {showTap && !isChoice && !isEnd && !isTitle && (
         <button
           onClick={onNext}
           className="cursor-pointer text-sm text-stone-300"
@@ -96,15 +120,6 @@ export function BottomControls({
           className="cursor-pointer text-sm text-stone-300"
         >
           tap untuk menutup surat
-        </button>
-      )}
-
-      {isEnd && currentId === "end" && (
-        <button
-          onClick={onEnd}
-          className="cursor-pointer text-sm text-stone-300"
-        >
-          mulai ulang
         </button>
       )}
     </div>

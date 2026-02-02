@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { SCREENS, SHADOW_KEY_MAP, PERSONA_KEY_MAP } from "./screenData";
 
 export function useStoryNavigation() {
-  const [currentId, setCurrentId] = useState("entry");
+  const [currentId, setCurrentId] = useState("title");
   const [personaKey, setPersonaKey] = useState(null);
   const [shadowKey, setShadowKey] = useState(null);
   const [screenKey, setScreenKey] = useState(0);
@@ -12,11 +12,13 @@ export function useStoryNavigation() {
   const [choiceReady, setChoiceReady] = useState(false);
   const tapTimerRef = useRef(null);
   const choiceTimerRef = useRef(null);
+  const endTimerRef = useRef(null);
 
   const screen = SCREENS[currentId];
   const isChoice = screen?.type === "choice";
   const isReveal = screen?.type === "reveal";
   const isEnd = screen?.type === "end";
+  const isTitle = screen?.type === "title";
   const visibleLines = screen?.lines.filter(Boolean).length ?? 0;
 
   useEffect(() => {
@@ -26,12 +28,22 @@ export function useStoryNavigation() {
     setChoiceReady(false);
     clearTimeout(tapTimerRef.current);
     clearTimeout(choiceTimerRef.current);
+    clearTimeout(endTimerRef.current);
 
-    if (isChoice) {
+    if (isTitle) {
+      setShowTap(true);
+    } else if (isChoice) {
       choiceTimerRef.current = setTimeout(() => {
         setShowChoices(true);
         setChoiceReady(true);
       }, 1800);
+    } else if (isEnd && currentId === "end") {
+      endTimerRef.current = setTimeout(() => {
+        setCurrentId("title");
+        setPersonaKey(null);
+        setShadowKey(null);
+        setScreenKey((k) => k + 1);
+      }, 4000);
     } else if (!isEnd) {
       tapTimerRef.current = setTimeout(() => setShowTap(true), 600);
     }
@@ -39,8 +51,9 @@ export function useStoryNavigation() {
     return () => {
       clearTimeout(tapTimerRef.current);
       clearTimeout(choiceTimerRef.current);
+      clearTimeout(endTimerRef.current);
     };
-  }, [currentId, screenKey, isChoice, isEnd]);
+  }, [currentId, screenKey, isChoice, isEnd, isTitle]);
 
   const navigate = useCallback((nextId) => {
     if (!nextId) return;
@@ -69,13 +82,6 @@ export function useStoryNavigation() {
     [navigate],
   );
 
-  const handleEnd = useCallback(() => {
-    setCurrentId("entry");
-    setPersonaKey(null);
-    setShadowKey(null);
-    setScreenKey((k) => k + 1);
-  }, []);
-
   const toggleChoices = useCallback(() => {
     setShowChoices((v) => !v);
   }, []);
@@ -86,6 +92,7 @@ export function useStoryNavigation() {
     isChoice,
     isReveal,
     isEnd,
+    isTitle,
     visibleLines,
     choiceSelected,
     showTap,
@@ -94,7 +101,6 @@ export function useStoryNavigation() {
     currentId,
     handleNext,
     handleChoice,
-    handleEnd,
     toggleChoices,
   };
 }

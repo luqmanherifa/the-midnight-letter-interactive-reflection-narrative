@@ -1,4 +1,11 @@
 export const SCREENS = {
+  title: {
+    id: "title",
+    type: "title",
+    lines: [],
+    choices: null,
+    next: "entry",
+  },
   entry: {
     id: "entry",
     type: "text",
