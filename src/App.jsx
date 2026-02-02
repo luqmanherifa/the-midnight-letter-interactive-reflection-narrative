@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useStoryNavigation } from "./useStoryNavigation";
 import {
   TitleScreen,
@@ -28,6 +28,7 @@ export default function App() {
   } = useStoryNavigation();
 
   const [showButtons, setShowButtons] = useState(false);
+  const contentRef = useRef(null);
 
   useEffect(() => {
     setShowButtons(false);
@@ -36,7 +37,7 @@ export default function App() {
   const handleTypewriterComplete = () => {
     setTimeout(() => {
       setShowButtons(true);
-    }, 1000);
+    }, 800);
   };
 
   if (!screen) return null;
@@ -46,29 +47,38 @@ export default function App() {
       {!isTitle && <ProgressIndicator currentId={currentId} />}
 
       <div className="min-h-screen flex flex-col items-center justify-center px-6 pointer-events-none">
-        <div key={screenKey} className="w-full max-w-sm text-center">
+        <div
+          key={screenKey}
+          ref={contentRef}
+          className="w-full max-w-sm"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
           {isTitle && <TitleScreen />}
 
           {!isTitle && (
-            <>
-              {(!isChoice || !showChoices || !showButtons) && (
-                <TextContent
-                  lines={screen.lines}
-                  visibleLines={visibleLines}
-                  onTypewriterComplete={
-                    isChoice ? handleTypewriterComplete : undefined
-                  }
-                />
-              )}
+            <div className="w-full text-center">
+              <TextContent
+                lines={screen.lines}
+                visibleLines={visibleLines}
+                onTypewriterComplete={
+                  isChoice ? handleTypewriterComplete : undefined
+                }
+              />
 
-              {isChoice && showChoices && showButtons && (
+              {isChoice && showChoices && (
                 <ChoiceButtons
                   choices={screen.choices}
                   choiceSelected={choiceSelected}
                   onChoice={handleChoice}
+                  show={showButtons}
                 />
               )}
-            </>
+            </div>
           )}
         </div>
       </div>
