@@ -196,10 +196,10 @@ export function ProgressIndicator({ currentId }) {
             key={i}
             className={`h-0.5 rounded-full transition-all duration-300 ${
               i === currentStage
-                ? "w-8 bg-stone-300"
+                ? "w-1 bg-stone-300"
                 : i < currentStage
-                  ? "w-4 bg-stone-600"
-                  : "w-4 bg-stone-800"
+                  ? "w-1 bg-stone-600"
+                  : "w-1 bg-stone-800"
             }`}
           />
         ))}
