@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useStoryNavigation } from "./useStoryNavigation";
 import {
   TitleScreen,
@@ -26,6 +27,18 @@ export default function App() {
     toggleChoices,
   } = useStoryNavigation();
 
+  const [showButtons, setShowButtons] = useState(false);
+
+  useEffect(() => {
+    setShowButtons(false);
+  }, [screenKey]);
+
+  const handleTypewriterComplete = () => {
+    setTimeout(() => {
+      setShowButtons(true);
+    }, 1000);
+  };
+
   if (!screen) return null;
 
   return (
@@ -36,16 +49,26 @@ export default function App() {
         <div key={screenKey} className="w-full max-w-sm text-center">
           {isTitle && <TitleScreen />}
 
-          {!isTitle && (!isChoice || !showChoices) && (
-            <TextContent lines={screen.lines} visibleLines={visibleLines} />
-          )}
+          {!isTitle && (
+            <>
+              {(!isChoice || !showChoices || !showButtons) && (
+                <TextContent
+                  lines={screen.lines}
+                  visibleLines={visibleLines}
+                  onTypewriterComplete={
+                    isChoice ? handleTypewriterComplete : undefined
+                  }
+                />
+              )}
 
-          {isChoice && showChoices && (
-            <ChoiceButtons
-              choices={screen.choices}
-              choiceSelected={choiceSelected}
-              onChoice={handleChoice}
-            />
+              {isChoice && showChoices && showButtons && (
+                <ChoiceButtons
+                  choices={screen.choices}
+                  choiceSelected={choiceSelected}
+                  onChoice={handleChoice}
+                />
+              )}
+            </>
           )}
         </div>
       </div>

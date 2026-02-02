@@ -1,4 +1,6 @@
+import { motion } from "framer-motion";
 import { TypewriterText } from "./TypewriterText";
+import { useState } from "react";
 
 export function TitleScreen() {
   return (
@@ -15,8 +17,18 @@ export function TitleScreen() {
   );
 }
 
-export function TextContent({ lines, visibleLines }) {
+export function TextContent({ lines, visibleLines, onTypewriterComplete }) {
   let cumulativeDelay = 0;
+  const [completedLines, setCompletedLines] = useState(0);
+
+  const handleLineComplete = (lineIndex) => {
+    const newCompleted = lineIndex + 1;
+    setCompletedLines(newCompleted);
+
+    if (newCompleted === visibleLines && onTypewriterComplete) {
+      onTypewriterComplete();
+    }
+  };
 
   return (
     <>
@@ -35,7 +47,12 @@ export function TextContent({ lines, visibleLines }) {
               ${i < visibleLines - 1 ? "mb-4" : ""}
             `}
           >
-            <TypewriterText text={line} delay={lineDelay} speed={0.03} />
+            <TypewriterText
+              text={line}
+              delay={lineDelay}
+              speed={0.03}
+              onComplete={() => handleLineComplete(i)}
+            />
           </p>
         );
       })}
@@ -45,27 +62,40 @@ export function TextContent({ lines, visibleLines }) {
 
 export function ChoiceButtons({ choices, choiceSelected, onChoice }) {
   return (
-    <div className="flex flex-col gap-2.5 pointer-events-auto">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="flex flex-col gap-2.5 pointer-events-auto mt-6"
+    >
       {choices.map((choice, i) => (
-        <button
+        <motion.button
           key={i}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            duration: 0.3,
+            delay: i * 0.08,
+            ease: "easeOut",
+          }}
           onClick={() => !choiceSelected && onChoice(choice)}
           className={`
             w-full text-left px-4 py-3.5 rounded cursor-pointer
             text-sm tracking-wide border
+            transition-all duration-200
             ${
               choiceSelected === choice.label
                 ? "bg-stone-800 border-stone-600 text-stone-300"
                 : choiceSelected
                   ? "bg-transparent border-stone-700 text-stone-300 opacity-40"
-                  : "bg-transparent border-stone-700 text-stone-300"
+                  : "bg-transparent border-stone-700 text-stone-300 hover:bg-stone-900/30"
             }
           `}
         >
           {choice.label}
-        </button>
+        </motion.button>
       ))}
-    </div>
+    </motion.div>
   );
 }
 
