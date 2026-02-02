@@ -1,15 +1,32 @@
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useCallback } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { SCREENS, SHADOW_KEY_MAP, PERSONA_KEY_MAP } from "./screenData";
+import {
+  navigate,
+  setPersonaKey,
+  setShadowKey,
+  setChoiceSelected,
+  setShowTap,
+  setShowChoices,
+  setChoiceReady,
+  toggleChoices as toggleChoicesAction,
+  resetStory,
+  resetUI,
+} from "./store/storySlice";
 
 export function useStoryNavigation() {
-  const [currentId, setCurrentId] = useState("title");
-  const [personaKey, setPersonaKey] = useState(null);
-  const [shadowKey, setShadowKey] = useState(null);
-  const [screenKey, setScreenKey] = useState(0);
-  const [choiceSelected, setChoiceSelected] = useState(null);
-  const [showTap, setShowTap] = useState(false);
-  const [showChoices, setShowChoices] = useState(false);
-  const [choiceReady, setChoiceReady] = useState(false);
+  const dispatch = useDispatch();
+
+  const {
+    currentId,
+    personaKey,
+    shadowKey,
+    screenKey,
+    choiceSelected,
+    showTap,
+    showChoices,
+    choiceReady,
+  } = useSelector((state) => state.story);
 
   const screen = SCREENS[currentId];
   const isChoice = screen?.type === "choice";
@@ -19,31 +36,19 @@ export function useStoryNavigation() {
   const visibleLines = screen?.lines.filter(Boolean).length ?? 0;
 
   useEffect(() => {
-    setShowTap(false);
-    setChoiceSelected(null);
-    setShowChoices(false);
-    setChoiceReady(false);
+    dispatch(resetUI());
 
     if (isTitle) {
-      setShowTap(true);
+      dispatch(setShowTap(true));
     } else if (isChoice) {
-      setShowChoices(true);
-      setChoiceReady(true);
+      dispatch(setShowChoices(true));
+      dispatch(setChoiceReady(true));
     } else if (isEnd && currentId === "end") {
-      setCurrentId("title");
-      setPersonaKey(null);
-      setShadowKey(null);
-      setScreenKey((k) => k + 1);
+      dispatch(resetStory());
     } else if (!isEnd) {
-      setShowTap(true);
+      dispatch(setShowTap(true));
     }
-  }, [currentId, screenKey, isChoice, isEnd, isTitle]);
-
-  const navigate = useCallback((nextId) => {
-    if (!nextId) return;
-    setCurrentId(nextId);
-    setScreenKey((k) => k + 1);
-  }, []);
+  }, [currentId, screenKey, isChoice, isEnd, isTitle, dispatch]);
 
   const handleNext = useCallback(() => {
     if (!screen) return;
@@ -51,24 +56,26 @@ export function useStoryNavigation() {
     if (next === "__DYNAMIC_S07__") {
       next = `s07_${personaKey}${shadowKey}`;
     }
-    navigate(next);
-  }, [screen, personaKey, shadowKey, navigate]);
+    dispatch(navigate(next));
+  }, [screen, personaKey, shadowKey, dispatch]);
 
   const handleChoice = useCallback(
     (choice) => {
-      setChoiceSelected(choice.label);
-      if (choice.next in PERSONA_KEY_MAP)
-        setPersonaKey(PERSONA_KEY_MAP[choice.next]);
-      if (choice.next in SHADOW_KEY_MAP)
-        setShadowKey(SHADOW_KEY_MAP[choice.next]);
-      navigate(choice.next);
+      dispatch(setChoiceSelected(choice.label));
+      if (choice.next in PERSONA_KEY_MAP) {
+        dispatch(setPersonaKey(PERSONA_KEY_MAP[choice.next]));
+      }
+      if (choice.next in SHADOW_KEY_MAP) {
+        dispatch(setShadowKey(SHADOW_KEY_MAP[choice.next]));
+      }
+      dispatch(navigate(choice.next));
     },
-    [navigate],
+    [dispatch],
   );
 
   const toggleChoices = useCallback(() => {
-    setShowChoices((v) => !v);
-  }, []);
+    dispatch(toggleChoicesAction());
+  }, [dispatch]);
 
   return {
     screen,
