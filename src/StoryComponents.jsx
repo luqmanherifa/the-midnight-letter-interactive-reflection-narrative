@@ -75,7 +75,7 @@ export function TitleScreen() {
       <SettingsPanel />
       <div className="text-center">
         <h1
-          className={`text-2xl tracking-widest mb-6 font-light ${
+          className={`text-xl tracking-widest mb-6 font-light ${
             theme === "dark" ? "text-stone-200" : "text-stone-700"
           }`}
         >
@@ -202,15 +202,15 @@ export function BottomControls({
 
   const buttonClasses =
     theme === "dark"
-      ? "text-stone-300 hover:text-stone-100 border-stone-700 hover:border-stone-600 bg-stone-900/50 hover:bg-stone-800/50"
-      : "text-stone-600 hover:text-stone-800 border-stone-300 hover:border-stone-400 bg-stone-100/50 hover:bg-stone-200/50";
+      ? "text-stone-300 hover:text-stone-100"
+      : "text-stone-600 hover:text-stone-800";
 
   return (
     <div className="absolute inset-x-0 bottom-0 pb-24 flex justify-center z-10">
       {isTitle && (
         <button
           onClick={onNext}
-          className={`cursor-pointer text-sm transition-colors px-6 py-2 rounded border ${buttonClasses}`}
+          className={`cursor-pointer text-sm transition-colors px-6 py-2 rounded  ${buttonClasses}`}
         >
           {t.start}
         </button>
@@ -219,7 +219,7 @@ export function BottomControls({
       {showTap && !isChoice && !isEnd && !isTitle && (
         <button
           onClick={onNext}
-          className={`cursor-pointer text-sm transition-colors px-6 py-2 rounded border ${buttonClasses}`}
+          className={`cursor-pointer text-sm transition-colors px-6 py-2 rounded  ${buttonClasses}`}
         >
           {t.continue}
         </button>
@@ -228,7 +228,7 @@ export function BottomControls({
       {isEnd && currentId === "s13" && (
         <button
           onClick={onNext}
-          className={`cursor-pointer text-sm transition-colors px-6 py-2 rounded border ${buttonClasses}`}
+          className={`cursor-pointer text-sm transition-colors px-6 py-2 rounded  ${buttonClasses}`}
         >
           {t.closeLetter}
         </button>
