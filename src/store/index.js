@@ -6,7 +6,14 @@ import storyReducer from "./storySlice";
 const persistConfig = {
   key: "midnight-letter",
   storage,
-  whitelist: ["currentId", "personaKey", "shadowKey", "visitedScreens"],
+  whitelist: [
+    "currentId",
+    "personaKey",
+    "shadowKey",
+    "visitedScreens",
+    "language",
+    "theme",
+  ],
 };
 
 const persistedReducer = persistReducer(persistConfig, storyReducer);

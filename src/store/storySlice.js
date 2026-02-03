@@ -12,6 +12,9 @@ const initialState = {
   choiceReady: false,
 
   visitedScreens: [],
+
+  language: "id",
+  theme: "dark",
 };
 
 const storySlice = createSlice({
@@ -52,6 +55,22 @@ const storySlice = createSlice({
       state.showChoices = !state.showChoices;
     },
 
+    setLanguage: (state, action) => {
+      state.language = action.payload;
+    },
+
+    setTheme: (state, action) => {
+      state.theme = action.payload;
+    },
+
+    toggleTheme: (state) => {
+      state.theme = state.theme === "dark" ? "light" : "dark";
+    },
+
+    toggleLanguage: (state) => {
+      state.language = state.language === "id" ? "en" : "id";
+    },
+
     resetStory: () => initialState,
 
     resetUI: (state) => {
@@ -72,6 +91,10 @@ export const {
   setShowChoices,
   setChoiceReady,
   toggleChoices,
+  setLanguage,
+  setTheme,
+  toggleTheme,
+  toggleLanguage,
   resetStory,
   resetUI,
 } = storySlice.actions;
