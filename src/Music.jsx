@@ -6,27 +6,87 @@ const ai = new GoogleGenAI({
   apiKey: import.meta.env.VITE_GEMINI_API_KEY,
 });
 
+const STEPS = [
+  {
+    id: "feeling",
+    label: "Perasaan kamu saat ini",
+    placeholder: "Apa yang kamu rasakan malam ini",
+    type: "input",
+  },
+  {
+    id: "lyrics",
+    label: "Penggalan lirik yang terngiang",
+    placeholder: "Baris yang terus kembali di kepala",
+    type: "textarea",
+  },
+  {
+    id: "songTitle",
+    label: "Judul lagunya",
+    placeholder: "Lagu apa itu",
+    type: "input",
+  },
+  {
+    id: "artist",
+    label: "Siapa yang menyanyikan",
+    placeholder: "Nama penyanyi atau band",
+    type: "input",
+  },
+];
+
 export default function Music() {
-  const [lyrics, setLyrics] = useState("");
-  const [songTitle, setSongTitle] = useState("");
-  const [artist, setArtist] = useState("");
-  const [feeling, setFeeling] = useState("");
+  const [currentStep, setCurrentStep] = useState(0);
+  const [formData, setFormData] = useState({
+    feeling: "",
+    lyrics: "",
+    songTitle: "",
+    artist: "",
+  });
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [theme] = useState("dark");
 
+  const currentField = STEPS[currentStep].id;
+  const isLastStep = currentStep === STEPS.length - 1;
+  const canProceed = formData[currentField].trim().length > 0;
+
+  const handleNext = () => {
+    if (canProceed && !isLastStep) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleChange = (value) => {
+    setFormData({ ...formData, [currentField]: value });
+  };
+
+  const handleKeyPress = (e) => {
+    if (
+      e.key === "Enter" &&
+      !e.shiftKey &&
+      STEPS[currentStep].type === "input"
+    ) {
+      e.preventDefault();
+      if (canProceed) {
+        if (isLastStep) {
+          handleSubmit(e);
+        } else {
+          handleNext();
+        }
+      }
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (
-      !lyrics.trim() ||
-      !songTitle.trim() ||
-      !artist.trim() ||
-      !feeling.trim()
-    ) {
-      return;
-    }
+    if (!canProceed) return;
 
     setLoading(true);
     setResult("");
@@ -34,28 +94,43 @@ export default function Music() {
 
     try {
       const prompt = `
-Kamu adalah bagian dari diri seseorang yang mengamati dari dalam.
-Kamu tidak memberi saran. Kamu hanya melihat dan menyambungkan.
+        Kamu adalah pengamat yang hidup di dalam diri seseorang.
+        Kamu tidak memberi saran, tidak menenangkan, dan tidak membantu menyelesaikan apa pun.
 
-Penggalan lirik yang ia ingat:
-"${lyrics}"
+        Seseorang datang membawa satu perasaan saat ini,
+        dan satu potongan lirik yang terus terngiang di kepalanya.
+        Lagu hanya menjadi asal dari lirik itu, bukan topik utama.
 
-Dari lagu:
-"${songTitle}" oleh ${artist}
+        Perasaan yang ia rasakan saat ini:
+        "${formData.feeling}"
 
-Perasaan yang ia bawa saat mendengarnya:
-"${feeling}"
+        Potongan lirik yang terngiang:
+        "${formData.lyrics}"
 
-Tugas kamu:
-Temukan jarak antara lirik itu dan perasaan yang ia bawa.
-Bukan menganalisis musik. Bukan memberi solusi.
-Hanya menunjukkan apa yang mungkin tidak ia sadari dari hubungan keduanya.
+        Lirik ini berasal dari lagu:
+        "${formData.songTitle}" oleh ${formData.artist}
 
-Tulis 1 paragraf pendek (80–120 kata).
-Bahasa Indonesia. Tenang. Jujur. Langsung.
-Jangan gunakan kata "mungkin", "sepertinya", atau ragu-ragu.
-Paksa hubungan itu muncul dengan yakin.
-`;
+        Aturan keras:
+        - Jangan membahas lagu, musik, genre, atau artis.
+        - Jangan menjelaskan arti lirik.
+        - Jangan mengaitkan emosi dengan suasana lagu.
+        - Jangan bertanya.
+        - Jangan memberi solusi atau arah.
+
+        Tugasmu:
+        Paksa hubungan antara perasaan saat ini dan potongan lirik yang terngiang,
+        bukan sebagai penjelasan, tapi sebagai keberadaan yang saling menempel.
+        Tunjukkan keterkaitan itu dengan yakin, meskipun tidak nyaman dan tidak diminta.
+
+        Tulis tepat 3 paragraf pendek.
+        Setiap paragraf maksimal 2 kalimat.
+        Bahasa Indonesia.
+        Nada tenang, datar, dan pasti.
+        Tanpa metafora berlebihan.
+        Tanpa kata: "mungkin", "sepertinya", "seolah".
+
+        Akhiri tanpa kesimpulan dan tanpa penutup manis.
+    `;
 
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
@@ -76,6 +151,13 @@ Paksa hubungan itu muncul dengan yakin.
   const handleCloseModal = () => {
     setShowModal(false);
     setResult("");
+    setCurrentStep(0);
+    setFormData({
+      feeling: "",
+      lyrics: "",
+      songTitle: "",
+      artist: "",
+    });
   };
 
   const themeClasses = {
@@ -89,6 +171,9 @@ Paksa hubungan itu muncul dengan yakin.
         "bg-transparent border-stone-700 text-stone-300 hover:bg-stone-900/30 hover:border-stone-600",
       modal: "bg-stone-950/98 backdrop-blur-md",
       modalContent: "bg-stone-900/95 border-stone-700",
+      stepInactive: "bg-stone-800",
+      stepActive: "bg-stone-400",
+      stepCompleted: "bg-stone-500",
     },
     light: {
       bg: "bg-gradient-to-b from-stone-50 to-stone-100",
@@ -100,6 +185,9 @@ Paksa hubungan itu muncul dengan yakin.
         "bg-transparent border-stone-300 text-stone-700 hover:bg-stone-100 hover:border-stone-400",
       modal: "bg-stone-100/98 backdrop-blur-md",
       modalContent: "bg-stone-50 border-stone-300",
+      stepInactive: "bg-stone-300",
+      stepActive: "bg-stone-600",
+      stepCompleted: "bg-stone-500",
     },
   };
 
@@ -129,76 +217,134 @@ Paksa hubungan itu muncul dengan yakin.
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <label
-                  className={`block text-xs tracking-wide mb-2.5 ${currentTheme.label}`}
-                >
-                  Penggalan lirik yang kamu ingat
-                </label>
-                <textarea
-                  value={lyrics}
-                  onChange={(e) => setLyrics(e.target.value)}
-                  rows={3}
-                  maxLength={300}
-                  className={`w-full px-4 py-3.5 rounded border transition-all duration-200 text-sm tracking-wide leading-relaxed ${currentTheme.input} focus:outline-none resize-none`}
-                  placeholder="Baris atau kalimat yang tersangkut di kepala"
-                />
+            <div className="mb-10">
+              <div className="flex items-center justify-center gap-2">
+                {STEPS.map((step, index) => (
+                  <div key={step.id} className="flex items-center">
+                    <motion.div
+                      initial={false}
+                      animate={{
+                        scale: index === currentStep ? 1 : 0.8,
+                      }}
+                      className="relative"
+                    >
+                      <div
+                        className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                          index < currentStep
+                            ? currentTheme.stepCompleted
+                            : index === currentStep
+                              ? currentTheme.stepActive
+                              : currentTheme.stepInactive
+                        }`}
+                      />
+                      {index === currentStep && (
+                        <motion.div
+                          layoutId="activeRing"
+                          className={`absolute inset-0 -m-1 rounded-full border ${
+                            theme === "dark"
+                              ? "border-stone-400"
+                              : "border-stone-600"
+                          }`}
+                          transition={{
+                            type: "spring",
+                            stiffness: 300,
+                            damping: 30,
+                          }}
+                        />
+                      )}
+                    </motion.div>
+                    {index < STEPS.length - 1 && (
+                      <div
+                        className={`w-8 h-0.5 mx-1 transition-all duration-300 ${
+                          index < currentStep
+                            ? currentTheme.stepCompleted
+                            : currentTheme.stepInactive
+                        }`}
+                      />
+                    )}
+                  </div>
+                ))}
               </div>
-
-              <div>
-                <label
-                  className={`block text-xs tracking-wide mb-2.5 ${currentTheme.label}`}
+              <div className="text-center mt-4">
+                <p
+                  className={`text-xs tracking-wide ${
+                    theme === "dark" ? "text-stone-500" : "text-stone-400"
+                  }`}
                 >
-                  Judul lagu
-                </label>
-                <input
-                  type="text"
-                  value={songTitle}
-                  onChange={(e) => setSongTitle(e.target.value)}
-                  className={`w-full px-4 py-3.5 rounded border transition-all duration-200 text-sm tracking-wide ${currentTheme.input} focus:outline-none`}
-                  placeholder="Lagu apa yang sedang kamu dengar"
-                />
+                  {currentStep + 1} dari {STEPS.length}
+                </p>
               </div>
+            </div>
 
-              <div>
-                <label
-                  className={`block text-xs tracking-wide mb-2.5 ${currentTheme.label}`}
+            <form onSubmit={handleSubmit} className="space-y-8">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentStep}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
                 >
-                  Penyanyi
-                </label>
-                <input
-                  type="text"
-                  value={artist}
-                  onChange={(e) => setArtist(e.target.value)}
-                  className={`w-full px-4 py-3.5 rounded border transition-all duration-200 text-sm tracking-wide ${currentTheme.input} focus:outline-none`}
-                  placeholder="Siapa yang menyanyikannya"
-                />
-              </div>
+                  <label
+                    className={`block text-xs tracking-wide mb-2.5 ${currentTheme.label}`}
+                  >
+                    {STEPS[currentStep].label}
+                  </label>
+                  {STEPS[currentStep].type === "textarea" ? (
+                    <textarea
+                      value={formData[currentField]}
+                      onChange={(e) => handleChange(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      rows={4}
+                      maxLength={300}
+                      autoFocus
+                      className={`w-full px-4 py-3.5 rounded border transition-all duration-200 text-sm tracking-wide leading-relaxed ${currentTheme.input} focus:outline-none resize-none`}
+                      placeholder={STEPS[currentStep].placeholder}
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      value={formData[currentField]}
+                      onChange={(e) => handleChange(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      maxLength={currentField === "feeling" ? 150 : undefined}
+                      autoFocus
+                      className={`w-full px-4 py-3.5 rounded border transition-all duration-200 text-sm tracking-wide ${currentTheme.input} focus:outline-none`}
+                      placeholder={STEPS[currentStep].placeholder}
+                    />
+                  )}
+                </motion.div>
+              </AnimatePresence>
 
-              <div>
-                <label
-                  className={`block text-xs tracking-wide mb-2.5 ${currentTheme.label}`}
-                >
-                  Perasaan yang kamu bawa saat mendengarnya
-                </label>
-                <input
-                  type="text"
-                  value={feeling}
-                  onChange={(e) => setFeeling(e.target.value)}
-                  maxLength={150}
-                  className={`w-full px-4 py-3.5 rounded border transition-all duration-200 text-sm tracking-wide ${currentTheme.input} focus:outline-none`}
-                  placeholder="Dalam satu kalimat"
-                />
+              <div className="flex gap-3 pt-4">
+                {currentStep > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    className={`px-6 py-3.5 rounded border transition-all duration-200 text-sm tracking-wide ${currentTheme.button}`}
+                  >
+                    Kembali
+                  </button>
+                )}
+                {!isLastStep ? (
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    disabled={!canProceed}
+                    className={`flex-1 px-4 py-3.5 rounded border transition-all duration-200 text-sm tracking-wide ${currentTheme.button} disabled:opacity-40 disabled:cursor-not-allowed`}
+                  >
+                    Lanjut
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={!canProceed || loading}
+                    className={`flex-1 px-4 py-3.5 rounded border transition-all duration-200 text-sm tracking-wide ${currentTheme.button} disabled:opacity-40 disabled:cursor-not-allowed`}
+                  >
+                    Lihat jaraknya
+                  </button>
+                )}
               </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className={`w-full px-4 py-3.5 rounded border transition-all duration-200 text-sm tracking-wide ${currentTheme.button} disabled:opacity-40 disabled:cursor-not-allowed mt-8`}
-              >
-                Lihat jaraknya
-              </button>
             </form>
           </div>
         </div>
