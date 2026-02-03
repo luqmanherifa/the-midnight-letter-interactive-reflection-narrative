@@ -1,23 +1,100 @@
 import { motion } from "framer-motion";
 import { TypewriterText } from "./TypewriterText";
 import { useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { toggleTheme, toggleLanguage } from "./store/storySlice";
+import { UI_TRANSLATIONS, TITLE_TRANSLATIONS } from "./translations";
 
-export function TitleScreen() {
+function SettingsPanel() {
+  const dispatch = useDispatch();
+  const { theme, language } = useSelector((state) => state.story);
+  const [isOpen, setIsOpen] = useState(false);
+  const t = UI_TRANSLATIONS[language];
+
   return (
-    <div className="text-center">
-      <h1 className="text-2xl text-stone-200 tracking-widest mb-6 font-light">
-        The Midnight Letter
-      </h1>
-      <p className="text-sm text-stone-400 tracking-wide leading-relaxed">
-        Surat untuk bagian dirimu
-        <br />
-        yang terus berjalan di kegelapan
-      </p>
+    <div className="absolute top-6 right-6 z-50">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-6 h-6 flex items-center justify-center rounded-full opacity-30 hover:opacity-60 transition-opacity"
+        aria-label="Settings"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 640 640"
+          width="14"
+          height="14"
+          className={theme === "dark" ? "fill-stone-300" : "fill-stone-700"}
+        >
+          <path d="M259.1 73.5C262.1 58.7 275.2 48 290.4 48L350.2 48C365.4 48 378.5 58.7 381.5 73.5L396 143.5C410.1 149.5 423.3 157.2 435.3 166.3L503.1 143.8C517.5 139 533.3 145 540.9 158.2L570.8 210C578.4 223.2 575.7 239.8 564.3 249.9L511 297.3C511.9 304.7 512.3 312.3 512.3 320C512.3 327.7 511.8 335.3 511 342.7L564.4 390.2C575.8 400.3 578.4 417 570.9 430.1L541 481.9C533.4 495 517.6 501.1 503.2 496.3L435.4 473.8C423.3 482.9 410.1 490.5 396.1 496.6L381.7 566.5C378.6 581.4 365.5 592 350.4 592L290.6 592C275.4 592 262.3 581.3 259.3 566.5L244.9 496.6C230.8 490.6 217.7 482.9 205.6 473.8L137.5 496.3C123.1 501.1 107.3 495.1 99.7 481.9L69.8 430.1C62.2 416.9 64.9 400.3 76.3 390.2L129.7 342.7C128.8 335.3 128.4 327.7 128.4 320C128.4 312.3 128.9 304.7 129.7 297.3L76.3 249.8C64.9 239.7 62.3 223 69.8 209.9L99.7 158.1C107.3 144.9 123.1 138.9 137.5 143.7L205.3 166.2C217.4 157.1 230.6 149.5 244.6 143.4L259.1 73.5zM320.3 400C364.5 399.8 400.2 363.9 400 319.7C399.8 275.5 363.9 239.8 319.7 240C275.5 240.2 239.8 276.1 240 320.3C240.2 364.5 276.1 400.2 320.3 400z" />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="absolute top-10 right-0 bg-stone-900/95 backdrop-blur-md rounded-lg p-4 shadow-xl border border-stone-700 min-w-[180px]"
+        >
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-stone-400">{t.theme}</span>
+              <button
+                onClick={() => dispatch(toggleTheme())}
+                className="px-3 py-1.5 rounded bg-stone-800 hover:bg-stone-700 transition-colors"
+              >
+                <span className="text-xs text-stone-300 font-medium">
+                  {t[theme]}
+                </span>
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-stone-400">{t.language}</span>
+              <button
+                onClick={() => dispatch(toggleLanguage())}
+                className="px-3 py-1.5 rounded bg-stone-800 hover:bg-stone-700 transition-colors"
+              >
+                <span className="text-xs text-stone-300 font-medium">
+                  {language}
+                </span>
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 }
 
+export function TitleScreen() {
+  const { language, theme } = useSelector((state) => state.story);
+  const title = TITLE_TRANSLATIONS[language];
+
+  return (
+    <>
+      <SettingsPanel />
+      <div className="text-center">
+        <h1
+          className={`text-2xl tracking-widest mb-6 font-light ${
+            theme === "dark" ? "text-stone-200" : "text-stone-700"
+          }`}
+        >
+          {title.title}
+        </h1>
+        <p
+          className={`text-sm tracking-wide leading-relaxed whitespace-pre-line ${
+            theme === "dark" ? "text-stone-400" : "text-stone-500"
+          }`}
+        >
+          {title.subtitle}
+        </p>
+      </div>
+    </>
+  );
+}
+
 export function TextContent({ lines, visibleLines, onTypewriterComplete }) {
+  const { theme } = useSelector((state) => state.story);
   let cumulativeDelay = 0;
   const [completedLines, setCompletedLines] = useState(0);
 
@@ -42,8 +119,8 @@ export function TextContent({ lines, visibleLines, onTypewriterComplete }) {
           <p
             key={i}
             className={`
-              leading-relaxed tracking-wide
-              text-sm text-stone-300
+              leading-relaxed tracking-wide text-sm
+              ${theme === "dark" ? "text-stone-300" : "text-stone-600"}
               ${i < visibleLines - 1 ? "mb-4" : ""}
             `}
           >
@@ -61,6 +138,8 @@ export function TextContent({ lines, visibleLines, onTypewriterComplete }) {
 }
 
 export function ChoiceButtons({ choices, choiceSelected, onChoice, show }) {
+  const { theme } = useSelector((state) => state.story);
+
   if (!show) return null;
 
   return (
@@ -68,7 +147,7 @@ export function ChoiceButtons({ choices, choiceSelected, onChoice, show }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="flex flex-col gap-2.5 pointer-events-auto mt-8"
+      className="flex flex-col gap-2.5 mt-8"
     >
       {choices.map((choice, i) => (
         <motion.button
@@ -83,14 +162,19 @@ export function ChoiceButtons({ choices, choiceSelected, onChoice, show }) {
           onClick={() => !choiceSelected && onChoice(choice)}
           className={`
             w-full text-left px-4 py-3.5 rounded cursor-pointer
-            text-sm tracking-wide border
-            transition-all duration-200
+            text-sm tracking-wide border transition-all duration-200
             ${
-              choiceSelected === choice.label
-                ? "bg-stone-800 border-stone-600 text-stone-300"
-                : choiceSelected
-                  ? "bg-transparent border-stone-700 text-stone-300 opacity-40"
-                  : "bg-transparent border-stone-700 text-stone-300 hover:bg-stone-900/30 hover:border-stone-600"
+              theme === "dark"
+                ? choiceSelected === choice.label
+                  ? "bg-stone-800 border-stone-600 text-stone-300"
+                  : choiceSelected
+                    ? "bg-transparent border-stone-700 text-stone-300 opacity-40"
+                    : "bg-transparent border-stone-700 text-stone-300 hover:bg-stone-900/30 hover:border-stone-600"
+                : choiceSelected === choice.label
+                  ? "bg-stone-200 border-stone-400 text-stone-700"
+                  : choiceSelected
+                    ? "bg-transparent border-stone-300 text-stone-600 opacity-40"
+                    : "bg-transparent border-stone-300 text-stone-700 hover:bg-stone-100 hover:border-stone-400"
             }
           `}
         >
@@ -113,65 +197,49 @@ export function BottomControls({
   onNext,
   onToggleChoices,
 }) {
+  const { language, theme } = useSelector((state) => state.story);
+  const t = UI_TRANSLATIONS[language];
+
+  const buttonClasses =
+    theme === "dark"
+      ? "text-stone-300 hover:text-stone-100 border-stone-700 hover:border-stone-600 bg-stone-900/50 hover:bg-stone-800/50"
+      : "text-stone-600 hover:text-stone-800 border-stone-300 hover:border-stone-400 bg-stone-100/50 hover:bg-stone-200/50";
+
   return (
-    <div className="fixed inset-x-0 bottom-0 pb-24 flex justify-center pointer-events-auto">
+    <div className="absolute inset-x-0 bottom-0 pb-24 flex justify-center z-10">
       {isTitle && (
         <button
           onClick={onNext}
-          className="cursor-pointer text-sm text-stone-300 hover:text-stone-100 transition-colors"
+          className={`cursor-pointer text-sm transition-colors px-6 py-2 rounded border ${buttonClasses}`}
         >
-          mulai
+          {t.start}
         </button>
       )}
 
       {showTap && !isChoice && !isEnd && !isTitle && (
         <button
           onClick={onNext}
-          className="cursor-pointer text-sm text-stone-300 hover:text-stone-100 transition-colors"
+          className={`cursor-pointer text-sm transition-colors px-6 py-2 rounded border ${buttonClasses}`}
         >
-          lanjut
-        </button>
-      )}
-
-      {isChoice && showChoices && !choiceSelected && (
-        <button
-          onClick={onToggleChoices}
-          className="cursor-pointer text-stone-300 hover:text-stone-100 w-8 h-8 flex items-center justify-center transition-colors"
-        >
-          <svg width="16" height="16" viewBox="0 0 640 640" fill="currentColor">
-            <path d="M320 144C254.8 144 201.2 173.6 160.1 211.7C121.6 247.5 95 290 81.4 320C95 350 121.6 392.5 160.1 428.3C201.2 466.4 254.8 496 320 496C385.2 496 438.8 466.4 479.9 428.3C518.4 392.5 545 350 558.6 320C545 290 518.4 247.5 479.9 211.7C438.8 173.6 385.2 144 320 144zM127.4 176.6C174.5 132.8 239.2 96 320 96C400.8 96 465.5 132.8 512.6 176.6C559.4 220.1 590.7 272 605.6 307.7C608.9 315.6 608.9 324.4 605.6 332.3C590.7 368 559.4 420 512.6 463.4C465.5 507.1 400.8 544 320 544C239.2 544 174.5 507.2 127.4 463.4C80.6 419.9 49.3 368 34.4 332.3C31.1 324.4 31.1 315.6 34.4 307.7C49.3 272 80.6 220 127.4 176.6zM320 400C364.2 400 400 364.2 400 320C400 290.4 383.9 264.5 360 250.7C358.6 310.4 310.4 358.6 250.7 360C264.5 383.9 290.4 400 320 400zM240.4 311.6C242.9 311.9 245.4 312 248 312C283.3 312 312 283.3 312 248C312 245.4 311.8 242.9 311.6 240.4C274.2 244.3 244.4 274.1 240.5 311.5zM286 196.6C296.8 193.6 308.2 192.1 319.9 192.1C328.7 192.1 337.4 193 345.7 194.7C346 194.8 346.2 194.8 346.5 194.9C404.4 207.1 447.9 258.6 447.9 320.1C447.9 390.8 390.6 448.1 319.9 448.1C258.3 448.1 206.9 404.6 194.7 346.7C192.9 338.1 191.9 329.2 191.9 320.1C191.9 309.1 193.3 298.3 195.9 288.1C196.1 287.4 196.2 286.8 196.4 286.2C208.3 242.8 242.5 208.6 285.9 196.7z" />
-          </svg>
-        </button>
-      )}
-
-      {isChoice && !showChoices && choiceReady && (
-        <button
-          onClick={onToggleChoices}
-          className="cursor-pointer text-stone-300 hover:text-stone-100 w-8 h-8 flex items-center justify-center transition-colors"
-        >
-          <svg width="16" height="16" viewBox="0 0 640 640" fill="currentColor">
-            <path d="M73 39.1C63.6 29.7 48.4 29.7 39.1 39.1C29.8 48.5 29.7 63.7 39 73.1L567 601.1C576.4 610.5 591.6 610.5 600.9 601.1C610.2 591.7 610.3 576.5 600.9 567.2L504.5 470.8C507.2 468.4 509.9 466 512.5 463.6C559.3 420.1 590.6 368.2 605.5 332.5C608.8 324.6 608.8 315.8 605.5 307.9C590.6 272.2 559.3 220.2 512.5 176.8C465.4 133.1 400.7 96.2 319.9 96.2C263.1 96.2 214.3 114.4 173.9 140.4L73 39.1zM208.9 175.1C241 156.2 278.1 144 320 144C385.2 144 438.8 173.6 479.9 211.7C518.4 247.4 545 290 558.5 320C544.9 350 518.3 392.5 479.9 428.3C476.8 431.1 473.7 433.9 470.5 436.7L425.8 392C439.8 371.5 448 346.7 448 320C448 249.3 390.7 192 320 192C293.3 192 268.5 200.2 248 214.2L208.9 175.1zM390.9 357.1L282.9 249.1C294 243.3 306.6 240 320 240C364.2 240 400 275.8 400 320C400 333.4 396.7 346 390.9 357.1zM135.4 237.2L101.4 203.2C68.8 240 46.4 279 34.5 307.7C31.2 315.6 31.2 324.4 34.5 332.3C49.4 368 80.7 420 127.5 463.4C174.6 507.1 239.3 544 320.1 544C357.4 544 391.3 536.1 421.6 523.4L384.2 486C364.2 492.4 342.8 496 320 496C254.8 496 201.2 466.4 160.1 428.3C121.6 392.6 95 350 81.5 320C91.9 296.9 110.1 266.4 135.5 237.2z" />
-          </svg>
+          {t.continue}
         </button>
       )}
 
       {isEnd && currentId === "s13" && (
         <button
           onClick={onNext}
-          className="cursor-pointer text-sm text-stone-300 hover:text-stone-100 transition-colors"
+          className={`cursor-pointer text-sm transition-colors px-6 py-2 rounded border ${buttonClasses}`}
         >
-          tap untuk menutup surat
+          {t.closeLetter}
         </button>
       )}
     </div>
   );
 }
 
-export function TapOverlay({ onNext }) {
-  return <div className="fixed inset-0 z-0 cursor-pointer" onClick={onNext} />;
-}
-
 export function ProgressIndicator({ currentId }) {
+  const { theme } = useSelector((state) => state.story);
+
   const getProgressStage = (id) => {
     if (id === "title" || id === "entry") return 0;
     if (id.startsWith("s01") || id.startsWith("s02") || id.startsWith("s03"))
@@ -189,17 +257,23 @@ export function ProgressIndicator({ currentId }) {
   const currentStage = getProgressStage(currentId);
 
   return (
-    <div className="fixed top-0 inset-x-0 pt-24 flex justify-center">
+    <div className="absolute top-0 inset-x-0 pt-24 flex justify-center">
       <div className="flex gap-2 items-center">
         {Array.from({ length: totalStages }).map((_, i) => (
           <div
             key={i}
             className={`h-0.5 rounded-full transition-all duration-300 ${
-              i === currentStage
-                ? "w-1 bg-stone-300"
-                : i < currentStage
-                  ? "w-1 bg-stone-600"
-                  : "w-1 bg-stone-800"
+              theme === "dark"
+                ? i === currentStage
+                  ? "w-2 bg-stone-300"
+                  : i < currentStage
+                    ? "w-2 bg-stone-600"
+                    : "w-2 bg-stone-800"
+                : i === currentStage
+                  ? "w-2 bg-stone-600"
+                  : i < currentStage
+                    ? "w-2 bg-stone-400"
+                    : "w-2 bg-stone-300"
             }`}
           />
         ))}

@@ -1,6 +1,7 @@
 import { useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { SCREENS, SHADOW_KEY_MAP, PERSONA_KEY_MAP } from "./screenData";
+import { SCREEN_TRANSLATIONS } from "./translations";
 import {
   navigate,
   setPersonaKey,
@@ -26,9 +27,24 @@ export function useStoryNavigation() {
     showTap,
     showChoices,
     choiceReady,
+    language,
   } = useSelector((state) => state.story);
 
-  const screen = SCREENS[currentId];
+  const getTranslatedScreen = (id) => {
+    const originalScreen = SCREENS[id];
+    if (!originalScreen) return null;
+
+    if (language === "en" && SCREEN_TRANSLATIONS.en[id]) {
+      return {
+        ...originalScreen,
+        ...SCREEN_TRANSLATIONS.en[id],
+      };
+    }
+
+    return originalScreen;
+  };
+
+  const screen = getTranslatedScreen(currentId);
   const isChoice = screen?.type === "choice";
   const isReveal = screen?.type === "reveal";
   const isEnd = screen?.type === "end";
@@ -90,6 +106,7 @@ export function useStoryNavigation() {
     showChoices,
     choiceReady,
     currentId,
+    language,
     handleNext,
     handleChoice,
     toggleChoices,

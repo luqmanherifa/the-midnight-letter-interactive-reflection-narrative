@@ -1,15 +1,17 @@
 import { useState, useEffect, useRef } from "react";
+import { useSelector } from "react-redux";
 import { useStoryNavigation } from "./useStoryNavigation";
 import {
   TitleScreen,
   TextContent,
   ChoiceButtons,
   BottomControls,
-  TapOverlay,
   ProgressIndicator,
 } from "./StoryComponents";
 
 export default function App() {
+  const { theme } = useSelector((state) => state.story);
+
   const {
     screen,
     screenKey,
@@ -40,66 +42,78 @@ export default function App() {
     }, 800);
   };
 
+  const themeClasses = {
+    dark: {
+      bg: "bg-stone-950",
+      text: "text-stone-300",
+    },
+    light: {
+      bg: "bg-gradient-to-b from-stone-50 to-stone-100",
+      text: "text-stone-700",
+    },
+  };
+
+  const currentTheme = themeClasses[theme];
+
   if (!screen) return null;
 
   return (
-    <div className="min-h-screen bg-stone-950 relative">
-      {!isTitle && <ProgressIndicator currentId={currentId} />}
+    <div
+      className={`min-h-screen ${currentTheme.bg} ${currentTheme.text} transition-colors duration-500 flex items-center justify-center`}
+    >
+      <div className="w-full max-w-[428px] min-h-screen relative">
+        {!isTitle && <ProgressIndicator currentId={currentId} />}
 
-      <div className="min-h-screen flex flex-col items-center justify-center px-6 pointer-events-none">
-        <div
-          key={screenKey}
-          ref={contentRef}
-          className="w-full max-w-sm"
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          {isTitle && <TitleScreen />}
+        <div className="min-h-screen flex flex-col items-center justify-center px-6">
+          <div
+            key={screenKey}
+            ref={contentRef}
+            className="w-full max-w-sm"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {isTitle && <TitleScreen />}
 
-          {!isTitle && (
-            <div className="w-full text-center">
-              <TextContent
-                lines={screen.lines}
-                visibleLines={visibleLines}
-                onTypewriterComplete={
-                  isChoice ? handleTypewriterComplete : undefined
-                }
-              />
-
-              {isChoice && showChoices && (
-                <ChoiceButtons
-                  choices={screen.choices}
-                  choiceSelected={choiceSelected}
-                  onChoice={handleChoice}
-                  show={showButtons}
+            {!isTitle && (
+              <div className="w-full text-center">
+                <TextContent
+                  lines={screen.lines}
+                  visibleLines={visibleLines}
+                  onTypewriterComplete={
+                    isChoice ? handleTypewriterComplete : undefined
+                  }
                 />
-              )}
-            </div>
-          )}
+
+                {isChoice && showChoices && (
+                  <ChoiceButtons
+                    choices={screen.choices}
+                    choiceSelected={choiceSelected}
+                    onChoice={handleChoice}
+                    show={showButtons}
+                  />
+                )}
+              </div>
+            )}
+          </div>
         </div>
+
+        <BottomControls
+          showTap={showTap}
+          isChoice={isChoice}
+          isEnd={isEnd}
+          isTitle={isTitle}
+          currentId={currentId}
+          showChoices={showChoices}
+          choiceSelected={choiceSelected}
+          choiceReady={choiceReady}
+          onNext={handleNext}
+          onToggleChoices={toggleChoices}
+        />
       </div>
-
-      <BottomControls
-        showTap={showTap}
-        isChoice={isChoice}
-        isEnd={isEnd}
-        isTitle={isTitle}
-        currentId={currentId}
-        showChoices={showChoices}
-        choiceSelected={choiceSelected}
-        choiceReady={choiceReady}
-        onNext={handleNext}
-        onToggleChoices={toggleChoices}
-      />
-
-      {!isChoice && !isEnd && !isTitle && showTap && (
-        <TapOverlay onNext={handleNext} />
-      )}
-      {isTitle && <TapOverlay onNext={handleNext} />}
     </div>
   );
 }
