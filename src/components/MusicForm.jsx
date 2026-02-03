@@ -1,274 +1,30 @@
-import { useState, useEffect, useRef } from "react";
-import { GoogleGenAI } from "@google/genai";
 import { motion, AnimatePresence } from "framer-motion";
+import { useMusicForm, STEPS } from "../hooks/useMusicForm";
 
-const ai = new GoogleGenAI({
-  apiKey: import.meta.env.VITE_GEMINI_API_KEY,
-});
+export default function MusicForm() {
+  const {
+    currentStep,
+    formData,
+    result,
+    loading,
+    showModal,
+    suggestions,
+    showSuggestions,
+    searchLoading,
+    textareaRef,
+    currentField,
+    isLastStep,
+    canProceed,
+    handleNext,
+    handleBack,
+    handleChange,
+    handleSelectSuggestion,
+    handleKeyPress,
+    handleSubmit,
+    handleCloseModal,
+  } = useMusicForm();
 
-const STEPS = [
-  {
-    id: "feeling",
-    label: "Perasaan kamu saat ini",
-    placeholder: "Apa yang kamu rasakan malam ini",
-    type: "input",
-  },
-  {
-    id: "lyrics",
-    label: "Penggalan lirik yang terngiang",
-    placeholder: "Baris yang terus kembali di kepala",
-    type: "auto-expand",
-  },
-  {
-    id: "songTitle",
-    label: "Judul lagunya",
-    placeholder: "Lagu apa itu",
-    type: "input",
-  },
-  {
-    id: "artist",
-    label: "Siapa yang menyanyikan",
-    placeholder: "Suara siapa yang kamu dengar",
-    type: "input",
-  },
-];
-
-export default function Music() {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [formData, setFormData] = useState({
-    feeling: "",
-    lyrics: "",
-    songTitle: "",
-    artist: "",
-  });
-  const [result, setResult] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [theme] = useState("dark");
-  const [suggestions, setSuggestions] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const debounceTimer = useRef(null);
-  const textareaRef = useRef(null);
-
-  useEffect(() => {
-    return () => {
-      if (debounceTimer.current) {
-        clearTimeout(debounceTimer.current);
-      }
-    };
-  }, []);
-
-  const autoResizeTextarea = () => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = "auto";
-      const newHeight = Math.min(textarea.scrollHeight, 120);
-      textarea.style.height = `${newHeight}px`;
-    }
-  };
-
-  useEffect(() => {
-    if (textareaRef.current && currentStep === 1) {
-      textareaRef.current.style.height = "50px";
-      autoResizeTextarea();
-    }
-  }, [currentStep]);
-
-  const currentField = STEPS[currentStep].id;
-  const isLastStep = currentStep === STEPS.length - 1;
-  const canProceed = formData[currentField].trim().length > 0;
-
-  const searchSongs = async (query) => {
-    if (!query || query.trim().length < 2) {
-      setSuggestions([]);
-      return;
-    }
-
-    setSearchLoading(true);
-
-    try {
-      const response = await fetch(
-        `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=8`,
-      );
-      const data = await response.json();
-
-      if (data.results) {
-        const uniqueSongs = [];
-        const seen = new Set();
-
-        for (const item of data.results) {
-          const key = `${item.trackName}-${item.artistName}`;
-          if (!seen.has(key)) {
-            seen.add(key);
-            uniqueSongs.push({
-              title: item.trackName,
-              artist: item.artistName,
-              artwork: item.artworkUrl60,
-            });
-          }
-        }
-
-        setSuggestions(uniqueSongs);
-      }
-    } catch (error) {
-      console.error("Search error:", error);
-      setSuggestions([]);
-    } finally {
-      setSearchLoading(false);
-    }
-  };
-
-  const handleNext = () => {
-    if (canProceed && !isLastStep) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
-
-  const handleBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const handleChange = (value) => {
-    setFormData({ ...formData, [currentField]: value });
-
-    if (currentField === "lyrics") {
-      setTimeout(autoResizeTextarea, 0);
-    }
-
-    if (currentField === "lyrics") {
-      if (debounceTimer.current) clearTimeout(debounceTimer.current);
-
-      debounceTimer.current = setTimeout(() => {
-        if (value.trim().length >= 3) {
-          searchSongs(value);
-          setShowSuggestions(true);
-        } else {
-          setSuggestions([]);
-          setShowSuggestions(false);
-        }
-      }, 500);
-    }
-  };
-
-  const handleSelectSuggestion = (suggestion) => {
-    setFormData({
-      ...formData,
-      lyrics: formData.lyrics,
-      songTitle: suggestion.title,
-      artist: suggestion.artist,
-    });
-    setShowSuggestions(false);
-    setSuggestions([]);
-
-    if (currentStep < STEPS.length - 1) {
-      setTimeout(() => {
-        setCurrentStep(currentStep + 1);
-      }, 300);
-    }
-  };
-
-  const handleKeyPress = (e) => {
-    if (STEPS[currentStep].type === "auto-expand" && e.key === "Enter") {
-      return;
-    }
-
-    if (
-      e.key === "Enter" &&
-      !e.shiftKey &&
-      STEPS[currentStep].type === "input"
-    ) {
-      e.preventDefault();
-      if (canProceed) {
-        if (isLastStep) {
-          handleSubmit(e);
-        } else {
-          handleNext();
-        }
-      }
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!canProceed) return;
-
-    setLoading(true);
-    setResult("");
-    setShowModal(true);
-
-    try {
-      const prompt = `
-        Kamu adalah pengamat yang hidup di dalam diri seseorang.
-        Kamu tidak memberi saran, tidak menenangkan, dan tidak membantu menyelesaikan apa pun.
-
-        Seseorang datang membawa satu perasaan saat ini,
-        dan satu potongan lirik yang terus terngiang di kepalanya.
-        Lagu hanya menjadi asal dari lirik itu, bukan topik utama.
-
-        Perasaan yang ia rasakan saat ini:
-        "${formData.feeling}"
-
-        Potongan lirik yang terngiang:
-        "${formData.lyrics}"
-
-        Lirik ini berasal dari lagu:
-        "${formData.songTitle}" oleh ${formData.artist}
-
-        Aturan keras:
-        - Jangan membahas lagu, musik, genre, atau artis.
-        - Jangan menjelaskan arti lirik.
-        - Jangan mengaitkan emosi dengan suasana lagu.
-        - Jangan bertanya.
-        - Jangan memberi solusi atau arah.
-
-        Tugasmu:
-        Paksa hubungan antara perasaan saat ini dan potongan lirik yang terngiang,
-        bukan sebagai penjelasan, tapi sebagai keberadaan yang saling menempel.
-        Tunjukkan keterkaitan itu dengan yakin, meskipun tidak nyaman dan tidak diminta.
-
-        Tulis tepat 3 paragraf pendek.
-        Setiap paragraf maksimal 2 kalimat.
-        Bahasa Indonesia.
-        Nada tenang, datar, dan pasti.
-        Tanpa metafora berlebihan.
-        Tanpa kata: "mungkin", "sepertinya", "seolah".
-
-        Akhiri tanpa kesimpulan dan tanpa penutup manis.
-    `;
-
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt,
-      });
-
-      setResult(response.text);
-    } catch (error) {
-      console.error(error);
-      setResult(
-        "Tidak ada jawaban malam ini. Tapi lagu itu tetap bermakna, dan kamu tahu itu.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setResult("");
-    setCurrentStep(0);
-    setFormData({
-      feeling: "",
-      lyrics: "",
-      songTitle: "",
-      artist: "",
-    });
-    setSuggestions([]);
-    setShowSuggestions(false);
-  };
+  const theme = "dark";
 
   const themeClasses = {
     dark: {
@@ -283,20 +39,6 @@ export default function Music() {
       modalContent: "bg-stone-900/95 border-stone-700",
       stepInactive: "bg-stone-800",
       stepActive: "bg-stone-400",
-      stepCompleted: "bg-stone-500",
-    },
-    light: {
-      bg: "bg-gradient-to-b from-stone-50 to-stone-100",
-      text: "text-stone-700",
-      label: "text-stone-500",
-      input:
-        "bg-transparent border-stone-300 text-stone-700 focus:border-stone-400",
-      button:
-        "bg-transparent border-stone-300 text-stone-700 hover:bg-stone-100 hover:border-stone-400",
-      modal: "bg-stone-100/98 backdrop-blur-md",
-      modalContent: "bg-stone-50 border-stone-300",
-      stepInactive: "bg-stone-300",
-      stepActive: "bg-stone-600",
       stepCompleted: "bg-stone-500",
     },
   };
@@ -323,7 +65,14 @@ export default function Music() {
                   theme === "dark" ? "text-stone-400" : "text-stone-500"
                 }`}
               >
-                Antara lirik yang kamu ingat dan perasaan yang kamu bawa
+                Antara perasaan yang kamu bawa
+              </p>
+              <p
+                className={`text-sm tracking-wide leading-relaxed px-4 ${
+                  theme === "dark" ? "text-stone-400" : "text-stone-500"
+                }`}
+              >
+                dan lirik yang terngiang.
               </p>
             </div>
 
@@ -409,7 +158,7 @@ export default function Music() {
                       onKeyDown={handleKeyPress}
                       maxLength={300}
                       autoFocus
-                      rows={1}
+                      rows={2}
                       className={`w-full px-4 py-3.5 rounded border transition-all duration-200 text-sm tracking-wide leading-relaxed ${currentTheme.input} focus:outline-none resize-none overflow-hidden`}
                       placeholder={STEPS[currentStep].placeholder}
                       style={{ minHeight: "50px" }}
@@ -621,7 +370,7 @@ export default function Music() {
                         theme === "dark" ? "text-stone-400" : "text-stone-500"
                       }`}
                     >
-                      Sedang melihat...
+                      Mendengarkan...
                     </p>
                   </div>
                 ) : (
@@ -639,7 +388,7 @@ export default function Music() {
                     <div className="flex justify-center">
                       <button
                         onClick={handleCloseModal}
-                        className={`px-6 py-2 text-sm tracking-wide transition-colors ${
+                        className={`px-6 py-0 text-sm tracking-wide transition-colors ${
                           theme === "dark"
                             ? "text-stone-400 hover:text-stone-200"
                             : "text-stone-500 hover:text-stone-700"
