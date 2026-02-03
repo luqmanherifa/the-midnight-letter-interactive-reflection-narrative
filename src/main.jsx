@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { store, persistor } from "./store";
 import "./index.css";
 import App from "./App.jsx";
-import Music from "./Music.jsx";
+import MusicForm from "./components/MusicForm.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -15,7 +15,7 @@ createRoot(document.getElementById("root")).render(
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<App />} />
-            <Route path="/music" element={<Music />} />
+            <Route path="/distance" element={<MusicForm />} />
           </Routes>
         </BrowserRouter>
       </PersistGate>

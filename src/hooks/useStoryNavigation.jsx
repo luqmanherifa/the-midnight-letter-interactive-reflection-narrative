@@ -1,7 +1,11 @@
 import { useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { SCREENS, SHADOW_KEY_MAP, PERSONA_KEY_MAP } from "./screenData";
-import { SCREEN_TRANSLATIONS } from "./translations";
+import {
+  SCREENS,
+  SHADOW_KEY_MAP,
+  PERSONA_KEY_MAP,
+} from "../constant/terjemahan";
+import { SCREEN_TRANSLATIONS } from "../constant/translations";
 import {
   navigate,
   setPersonaKey,
@@ -13,7 +17,7 @@ import {
   toggleChoices as toggleChoicesAction,
   resetStory,
   resetUI,
-} from "./store/storySlice";
+} from "../store/storySlice";
 
 export function useStoryNavigation() {
   const dispatch = useDispatch();

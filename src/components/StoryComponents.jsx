@@ -2,8 +2,8 @@ import { motion } from "framer-motion";
 import { TypewriterText } from "./TypewriterText";
 import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { toggleTheme, toggleLanguage } from "./store/storySlice";
-import { UI_TRANSLATIONS, TITLE_TRANSLATIONS } from "./translations";
+import { toggleTheme, toggleLanguage } from "../store/storySlice";
+import { UI_TRANSLATIONS, TITLE_TRANSLATIONS } from "../constant/translations";
 
 function SettingsPanel() {
   const dispatch = useDispatch();

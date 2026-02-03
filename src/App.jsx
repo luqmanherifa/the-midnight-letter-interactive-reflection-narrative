@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
-import { useStoryNavigation } from "./useStoryNavigation";
-import { TITLE_TRANSLATIONS } from "./translations";
+import { useStoryNavigation } from "./hooks/useStoryNavigation";
+import { TITLE_TRANSLATIONS } from "./constant/translations";
 import {
   TitleScreen,
   TextContent,
   ChoiceButtons,
   BottomControls,
   ProgressIndicator,
-} from "./StoryComponents";
+} from "./components/StoryComponents";
 
 export default function App() {
   const { theme } = useSelector((state) => state.story);
