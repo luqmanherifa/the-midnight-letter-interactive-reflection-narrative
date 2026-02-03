@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { GoogleGenAI } from "@google/genai";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -17,7 +17,7 @@ const STEPS = [
     id: "lyrics",
     label: "Penggalan lirik yang terngiang",
     placeholder: "Baris yang terus kembali di kepala",
-    type: "textarea",
+    type: "auto-expand",
   },
   {
     id: "songTitle",
@@ -28,7 +28,7 @@ const STEPS = [
   {
     id: "artist",
     label: "Siapa yang menyanyikan",
-    placeholder: "Nama penyanyi atau band",
+    placeholder: "Suara siapa yang kamu dengar",
     type: "input",
   },
 ];
@@ -45,10 +45,79 @@ export default function Music() {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [theme] = useState("dark");
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const debounceTimer = useRef(null);
+  const textareaRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+    };
+  }, []);
+
+  const autoResizeTextarea = () => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = "auto";
+      const newHeight = Math.min(textarea.scrollHeight, 120);
+      textarea.style.height = `${newHeight}px`;
+    }
+  };
+
+  useEffect(() => {
+    if (textareaRef.current && currentStep === 1) {
+      textareaRef.current.style.height = "50px";
+      autoResizeTextarea();
+    }
+  }, [currentStep]);
 
   const currentField = STEPS[currentStep].id;
   const isLastStep = currentStep === STEPS.length - 1;
   const canProceed = formData[currentField].trim().length > 0;
+
+  const searchSongs = async (query) => {
+    if (!query || query.trim().length < 2) {
+      setSuggestions([]);
+      return;
+    }
+
+    setSearchLoading(true);
+
+    try {
+      const response = await fetch(
+        `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=8`,
+      );
+      const data = await response.json();
+
+      if (data.results) {
+        const uniqueSongs = [];
+        const seen = new Set();
+
+        for (const item of data.results) {
+          const key = `${item.trackName}-${item.artistName}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            uniqueSongs.push({
+              title: item.trackName,
+              artist: item.artistName,
+              artwork: item.artworkUrl60,
+            });
+          }
+        }
+
+        setSuggestions(uniqueSongs);
+      }
+    } catch (error) {
+      console.error("Search error:", error);
+      setSuggestions([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
 
   const handleNext = () => {
     if (canProceed && !isLastStep) {
@@ -64,9 +133,48 @@ export default function Music() {
 
   const handleChange = (value) => {
     setFormData({ ...formData, [currentField]: value });
+
+    if (currentField === "lyrics") {
+      setTimeout(autoResizeTextarea, 0);
+    }
+
+    if (currentField === "lyrics") {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+
+      debounceTimer.current = setTimeout(() => {
+        if (value.trim().length >= 3) {
+          searchSongs(value);
+          setShowSuggestions(true);
+        } else {
+          setSuggestions([]);
+          setShowSuggestions(false);
+        }
+      }, 500);
+    }
+  };
+
+  const handleSelectSuggestion = (suggestion) => {
+    setFormData({
+      ...formData,
+      lyrics: formData.lyrics,
+      songTitle: suggestion.title,
+      artist: suggestion.artist,
+    });
+    setShowSuggestions(false);
+    setSuggestions([]);
+
+    if (currentStep < STEPS.length - 1) {
+      setTimeout(() => {
+        setCurrentStep(currentStep + 1);
+      }, 300);
+    }
   };
 
   const handleKeyPress = (e) => {
+    if (STEPS[currentStep].type === "auto-expand" && e.key === "Enter") {
+      return;
+    }
+
     if (
       e.key === "Enter" &&
       !e.shiftKey &&
@@ -158,6 +266,8 @@ export default function Music() {
       songTitle: "",
       artist: "",
     });
+    setSuggestions([]);
+    setShowSuggestions(false);
   };
 
   const themeClasses = {
@@ -284,22 +394,25 @@ export default function Music() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.3 }}
+                  className="relative"
                 >
                   <label
                     className={`block text-xs tracking-wide mb-2.5 ${currentTheme.label}`}
                   >
                     {STEPS[currentStep].label}
                   </label>
-                  {STEPS[currentStep].type === "textarea" ? (
+                  {STEPS[currentStep].type === "auto-expand" ? (
                     <textarea
+                      ref={textareaRef}
                       value={formData[currentField]}
                       onChange={(e) => handleChange(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                      rows={4}
+                      onKeyDown={handleKeyPress}
                       maxLength={300}
                       autoFocus
-                      className={`w-full px-4 py-3.5 rounded border transition-all duration-200 text-sm tracking-wide leading-relaxed ${currentTheme.input} focus:outline-none resize-none`}
+                      rows={1}
+                      className={`w-full px-4 py-3.5 rounded border transition-all duration-200 text-sm tracking-wide leading-relaxed ${currentTheme.input} focus:outline-none resize-none overflow-hidden`}
                       placeholder={STEPS[currentStep].placeholder}
+                      style={{ minHeight: "50px" }}
                     />
                   ) : (
                     <input
@@ -313,6 +426,104 @@ export default function Music() {
                       placeholder={STEPS[currentStep].placeholder}
                     />
                   )}
+
+                  {currentField === "lyrics" &&
+                    showSuggestions &&
+                    suggestions.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className={`absolute z-50 w-full mt-2 rounded-lg border overflow-hidden ${
+                          theme === "dark"
+                            ? "bg-stone-900/98 border-stone-700 backdrop-blur-md"
+                            : "bg-stone-50/98 border-stone-300 backdrop-blur-md"
+                        }`}
+                      >
+                        <div className="max-h-80 overflow-y-auto">
+                          {searchLoading ? (
+                            <div className="px-4 py-6 text-center">
+                              <div className="flex justify-center gap-1.5">
+                                {[0, 1, 2].map((i) => (
+                                  <motion.div
+                                    key={i}
+                                    animate={{
+                                      scale: [1, 1.2, 1],
+                                      opacity: [0.5, 1, 0.5],
+                                    }}
+                                    transition={{
+                                      duration: 1.5,
+                                      repeat: Infinity,
+                                      delay: i * 0.2,
+                                    }}
+                                    className={`w-1.5 h-1.5 rounded-full ${
+                                      theme === "dark"
+                                        ? "bg-stone-400"
+                                        : "bg-stone-600"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <div
+                                className={`px-3 py-2 text-xs border-b ${
+                                  theme === "dark"
+                                    ? "text-stone-500 border-stone-700"
+                                    : "text-stone-400 border-stone-300"
+                                }`}
+                              >
+                                Atau pilih dari hasil pencarian
+                              </div>
+                              {suggestions.map((suggestion, index) => (
+                                <button
+                                  key={index}
+                                  onClick={() =>
+                                    handleSelectSuggestion(suggestion)
+                                  }
+                                  className={`w-full px-3 py-3 text-left transition-colors border-b last:border-b-0 ${
+                                    theme === "dark"
+                                      ? "hover:bg-stone-800/50 border-stone-800"
+                                      : "hover:bg-stone-100/50 border-stone-200"
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    {suggestion.artwork && (
+                                      <img
+                                        src={suggestion.artwork}
+                                        alt=""
+                                        className="w-10 h-10 rounded"
+                                      />
+                                    )}
+                                    <div className="flex-1 min-w-0">
+                                      <p
+                                        className={`text-sm font-medium truncate ${
+                                          theme === "dark"
+                                            ? "text-stone-300"
+                                            : "text-stone-700"
+                                        }`}
+                                      >
+                                        {suggestion.title}
+                                      </p>
+                                      <p
+                                        className={`text-xs truncate ${
+                                          theme === "dark"
+                                            ? "text-stone-500"
+                                            : "text-stone-400"
+                                        }`}
+                                      >
+                                        {suggestion.artist}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </button>
+                              ))}
+                            </>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
                 </motion.div>
               </AnimatePresence>
 
