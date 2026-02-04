@@ -5,103 +5,75 @@ export default function AnimatedBackground({ theme = "dark" }) {
 
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-      {[...Array(3)].map((_, i) => (
-        <motion.div
-          key={`orb-${i}`}
-          className={`absolute rounded-full ${
-            isDark ? "bg-stone-600/50" : "bg-stone-400/50"
-          }`}
-          style={{
-            width: `${120 + i * 50}px`,
-            height: `${120 + i * 50}px`,
-            left: `${i * 35 + 5}%`,
-            top: `${i * 30 + 15}%`,
-            filter: "blur(70px)",
-          }}
-          animate={{
-            x: [0, 40, -20, 0],
-            y: [0, -40, 20, 0],
-            scale: [1, 1.15, 0.95, 1],
-            opacity: [0.4, 0.6, 0.45, 0.4],
-          }}
-          transition={{
-            duration: 25 + i * 5,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: i * 3,
-          }}
-        />
-      ))}
-
       <motion.div
         className="absolute inset-0"
         style={{
           background: isDark
-            ? "radial-gradient(circle at 50% 50%, rgba(41, 37, 36, 0.4) 0%, transparent 70%)"
-            : "radial-gradient(circle at 50% 50%, rgba(214, 211, 209, 0.4) 0%, transparent 70%)",
+            ? "radial-gradient(circle at 50% 50%, rgba(41, 37, 36, 0.3) 0%, transparent 70%)"
+            : "radial-gradient(circle at 50% 50%, rgba(214, 211, 209, 0.3) 0%, transparent 70%)",
         }}
         animate={{
-          opacity: [0.5, 0.8, 0.5],
-          scale: [1, 1.1, 1],
+          opacity: [0.4, 0.7, 0.4],
+          scale: [1, 1.05, 1],
         }}
         transition={{
-          duration: 12,
+          duration: 15,
           repeat: Infinity,
           ease: "easeInOut",
         }}
       />
 
-      {[...Array(20)].map((_, i) => (
+      {[...Array(12)].map((_, i) => (
         <motion.div
           key={`particle-${i}`}
           className={`absolute rounded-full ${
-            isDark ? "bg-stone-400/80" : "bg-stone-500/80"
+            isDark ? "bg-stone-400/70" : "bg-stone-500/70"
           }`}
           style={{
-            width: `${2 + (i % 4)}px`,
-            height: `${2 + (i % 4)}px`,
-            left: `${(i * 5 + (i % 3) * 10) % 95}%`,
-            top: `${100 + (i % 4) * 8}%`,
+            width: `${2 + (i % 3)}px`,
+            height: `${2 + (i % 3)}px`,
+            left: `${(i * 8 + 10) % 90}%`,
+            top: `${100 + (i % 3) * 10}%`,
             filter: "blur(0.5px)",
           }}
           animate={{
             y: [-80, -900],
-            x: [0, (i % 2 === 0 ? 40 : -40) + (i % 3) * 10],
-            opacity: [0, 1, 1, 0],
-            scale: [0.8, 1.2, 1, 0.8],
+            x: [0, (i % 2 === 0 ? 30 : -30) + (i % 3) * 8],
+            opacity: [0, 0.9, 0.9, 0],
+            scale: [0.8, 1.1, 1, 0.8],
           }}
           transition={{
-            duration: 12 + (i % 6) * 2,
+            duration: 14 + (i % 4) * 2,
             repeat: Infinity,
             ease: "linear",
-            delay: (i * 0.8) % 12,
+            delay: (i * 1.2) % 14,
           }}
         />
       ))}
 
-      {[...Array(15)].map((_, i) => (
+      {[...Array(8)].map((_, i) => (
         <motion.div
           key={`particle-small-${i}`}
           className={`absolute rounded-full ${
-            isDark ? "bg-stone-300/70" : "bg-stone-600/70"
+            isDark ? "bg-stone-300/60" : "bg-stone-600/60"
           }`}
           style={{
             width: "1.5px",
             height: "1.5px",
-            left: `${(i * 7 + 15) % 90}%`,
-            top: `${100 + (i % 3) * 12}%`,
+            left: `${(i * 12 + 15) % 85}%`,
+            top: `${100 + (i % 2) * 15}%`,
             filter: "blur(0.3px)",
           }}
           animate={{
             y: [-60, -700],
-            x: [0, i % 3 === 0 ? 20 : i % 3 === 1 ? -20 : 0],
-            opacity: [0, 0.9, 0.9, 0],
+            x: [0, i % 3 === 0 ? 15 : i % 3 === 1 ? -15 : 0],
+            opacity: [0, 0.8, 0.8, 0],
           }}
           transition={{
-            duration: 10 + (i % 4) * 2,
+            duration: 12 + (i % 3) * 2,
             repeat: Infinity,
             ease: "linear",
-            delay: (i * 1.2) % 10,
+            delay: (i * 1.5) % 12,
           }}
         />
       ))}
@@ -110,14 +82,14 @@ export default function AnimatedBackground({ theme = "dark" }) {
         className="absolute inset-0"
         style={{
           background: isDark
-            ? "radial-gradient(ellipse at center, transparent 30%, rgba(12, 10, 9, 0.6) 100%)"
-            : "radial-gradient(ellipse at center, transparent 30%, rgba(245, 245, 244, 0.6) 100%)",
+            ? "radial-gradient(ellipse at center, transparent 30%, rgba(12, 10, 9, 0.5) 100%)"
+            : "radial-gradient(ellipse at center, transparent 30%, rgba(245, 245, 244, 0.5) 100%)",
         }}
         animate={{
-          opacity: [0.6, 0.9, 0.6],
+          opacity: [0.5, 0.8, 0.5],
         }}
         transition={{
-          duration: 10,
+          duration: 12,
           repeat: Infinity,
           ease: "easeInOut",
         }}
