@@ -13,6 +13,9 @@ export default function MusicForm() {
     showSuggestions,
     searchLoading,
     textareaRef,
+    audioPlayer,
+    isPlaying,
+    currentPreviewUrl,
     currentField,
     isLastStep,
     canProceed,
@@ -20,6 +23,8 @@ export default function MusicForm() {
     handleBack,
     handleChange,
     handleSelectSuggestion,
+    handlePlayPreview,
+    handleCloseSuggestions,
     handleKeyPress,
     handleSubmit,
     handleCloseModal,
@@ -77,6 +82,42 @@ export default function MusicForm() {
                 dan lirik yang tertinggal.
               </p>
             </div>
+
+            {isPlaying && audioPlayer && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="mb-6 flex items-center justify-center gap-2"
+              >
+                <div className="flex gap-0.5">
+                  {[0, 1, 2].map((i) => (
+                    <motion.div
+                      key={i}
+                      animate={{
+                        scaleY: [1, 1.5, 1],
+                      }}
+                      transition={{
+                        duration: 0.8,
+                        repeat: Infinity,
+                        delay: i * 0.15,
+                        ease: "easeInOut",
+                      }}
+                      className={`w-0.5 h-2 rounded-full ${
+                        theme === "dark" ? "bg-stone-400" : "bg-stone-600"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <p
+                  className={`text-xs tracking-wide ${
+                    theme === "dark" ? "text-stone-500" : "text-stone-400"
+                  }`}
+                >
+                  Mendengarkan preview...
+                </p>
+              </motion.div>
+            )}
 
             <div className="mb-10">
               <div className="flex items-center justify-center gap-2">
@@ -178,7 +219,9 @@ export default function MusicForm() {
                     />
                   )}
 
-                  {currentField === "lyrics" &&
+                  {(currentField === "lyrics" ||
+                    currentField === "songTitle" ||
+                    currentField === "artist") &&
                     showSuggestions &&
                     suggestions.length > 0 && (
                       <motion.div
@@ -219,21 +262,44 @@ export default function MusicForm() {
                           ) : (
                             <>
                               <div
-                                className={`px-3 py-0 text-xs border-b ${
+                                className={`px-3 py-2 text-xs border-b flex items-center justify-between ${
                                   theme === "dark"
                                     ? "text-stone-500 border-stone-700"
                                     : "text-stone-400 border-stone-300"
                                 }`}
                               >
-                                Atau pilih dari hasil pencarian
+                                <span>Atau pilih dari hasil pencarian</span>
+                                <button
+                                  type="button"
+                                  onClick={handleCloseSuggestions}
+                                  className={`p-1 rounded transition-colors ${
+                                    theme === "dark"
+                                      ? "hover:bg-stone-800 text-stone-500 hover:text-stone-300"
+                                      : "hover:bg-stone-200 text-stone-400 hover:text-stone-600"
+                                  }`}
+                                >
+                                  <svg
+                                    className="w-3.5 h-3.5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M6 18L18 6M6 6l12 12"
+                                    />
+                                  </svg>
+                                </button>
                               </div>
                               {suggestions.map((suggestion, index) => (
-                                <button
+                                <div
                                   key={index}
                                   onClick={() =>
                                     handleSelectSuggestion(suggestion)
                                   }
-                                  className={`w-full px-3 py-3 text-left transition-colors border-b last:border-b-0 ${
+                                  className={`w-full px-3 py-3 cursor-pointer transition-colors border-b last:border-b-0 ${
                                     theme === "dark"
                                       ? "hover:bg-stone-800/50 border-stone-800"
                                       : "hover:bg-stone-100/50 border-stone-200"
@@ -267,8 +333,52 @@ export default function MusicForm() {
                                         {suggestion.artist}
                                       </p>
                                     </div>
+                                    {suggestion.previewUrl && (
+                                      <button
+                                        type="button"
+                                        onClick={(e) =>
+                                          handlePlayPreview(
+                                            e,
+                                            suggestion.previewUrl,
+                                          )
+                                        }
+                                        className={`flex-shrink-0 p-1.5 rounded-full transition-colors ${
+                                          currentPreviewUrl ===
+                                            suggestion.previewUrl && isPlaying
+                                            ? theme === "dark"
+                                              ? "bg-stone-700 text-stone-300"
+                                              : "bg-stone-300 text-stone-700"
+                                            : theme === "dark"
+                                              ? "hover:bg-stone-800 text-stone-600"
+                                              : "hover:bg-stone-200 text-stone-400"
+                                        }`}
+                                      >
+                                        {currentPreviewUrl ===
+                                          suggestion.previewUrl && isPlaying ? (
+                                          <svg
+                                            className="w-4 h-4"
+                                            fill="currentColor"
+                                            viewBox="0 0 20 20"
+                                          >
+                                            <path
+                                              fillRule="evenodd"
+                                              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                              clipRule="evenodd"
+                                            />
+                                          </svg>
+                                        ) : (
+                                          <svg
+                                            className="w-4 h-4"
+                                            fill="currentColor"
+                                            viewBox="0 0 20 20"
+                                          >
+                                            <path d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" />
+                                          </svg>
+                                        )}
+                                      </button>
+                                    )}
                                   </div>
-                                </button>
+                                </div>
                               ))}
                             </>
                           )}

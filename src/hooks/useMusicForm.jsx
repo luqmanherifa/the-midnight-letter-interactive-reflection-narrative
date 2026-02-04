@@ -46,6 +46,10 @@ export const useMusicForm = () => {
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [audioPlayer, setAudioPlayer] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentPreviewUrl, setCurrentPreviewUrl] = useState(null);
+  const [loopCount, setLoopCount] = useState(0);
   const debounceTimer = useRef(null);
   const textareaRef = useRef(null);
 
@@ -56,6 +60,16 @@ export const useMusicForm = () => {
       }
     };
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (audioPlayer) {
+        audioPlayer.pause();
+        audioPlayer.currentTime = 0;
+        setAudioPlayer(null);
+      }
+    };
+  }, [audioPlayer]);
 
   const autoResizeTextarea = () => {
     const textarea = textareaRef.current;
@@ -103,6 +117,7 @@ export const useMusicForm = () => {
               title: item.trackName,
               artist: item.artistName,
               artwork: item.artworkUrl60,
+              previewUrl: item.previewUrl,
             });
           }
         }
@@ -136,7 +151,11 @@ export const useMusicForm = () => {
       setTimeout(autoResizeTextarea, 0);
     }
 
-    if (currentField === "lyrics") {
+    if (
+      currentField === "lyrics" ||
+      currentField === "songTitle" ||
+      currentField === "artist"
+    ) {
       if (debounceTimer.current) clearTimeout(debounceTimer.current);
 
       debounceTimer.current = setTimeout(() => {
@@ -152,12 +171,63 @@ export const useMusicForm = () => {
   };
 
   const handleSelectSuggestion = (suggestion) => {
-    setFormData({
-      ...formData,
-      lyrics: formData.lyrics,
-      songTitle: suggestion.title,
-      artist: suggestion.artist,
-    });
+    if (audioPlayer) {
+      audioPlayer.pause();
+      audioPlayer.currentTime = 0;
+    }
+
+    if (currentField === "lyrics") {
+      setFormData({
+        ...formData,
+        lyrics: formData.lyrics,
+        songTitle: suggestion.title,
+        artist: suggestion.artist,
+      });
+    } else if (currentField === "songTitle") {
+      setFormData({
+        ...formData,
+        songTitle: suggestion.title,
+        artist: suggestion.artist,
+      });
+    } else if (currentField === "artist") {
+      setFormData({
+        ...formData,
+        songTitle: suggestion.title,
+        artist: suggestion.artist,
+      });
+    }
+
+    if (suggestion.previewUrl) {
+      const audio = new Audio(suggestion.previewUrl);
+      audio.volume = 0.5;
+
+      let currentLoop = 0;
+
+      audio.onended = () => {
+        currentLoop++;
+        setLoopCount(currentLoop);
+
+        if (currentLoop < 3) {
+          audio.currentTime = 0;
+          audio.play().catch((err) => {
+            console.log("Replay blocked:", err);
+          });
+        } else {
+          setIsPlaying(false);
+          setLoopCount(0);
+        }
+      };
+
+      audio.play().catch((err) => {
+        console.log("Autoplay blocked:", err);
+      });
+
+      setAudioPlayer(audio);
+      setIsPlaying(true);
+      setCurrentPreviewUrl(suggestion.previewUrl);
+      setLoopCount(0);
+    }
+
     setShowSuggestions(false);
     setSuggestions([]);
 
@@ -166,6 +236,67 @@ export const useMusicForm = () => {
         setCurrentStep(currentStep + 1);
       }, 300);
     }
+  };
+
+  const handlePlayPreview = (e, previewUrl) => {
+    e.stopPropagation();
+
+    if (audioPlayer) {
+      audioPlayer.pause();
+      audioPlayer.currentTime = 0;
+    }
+
+    if (currentPreviewUrl === previewUrl && isPlaying) {
+      setAudioPlayer(null);
+      setIsPlaying(false);
+      setCurrentPreviewUrl(null);
+      setLoopCount(0);
+      return;
+    }
+
+    const audio = new Audio(previewUrl);
+    audio.volume = 0.5;
+
+    let currentLoop = 0;
+
+    audio.onended = () => {
+      currentLoop++;
+      setLoopCount(currentLoop);
+
+      if (currentLoop < 3) {
+        audio.currentTime = 0;
+        audio.play().catch((err) => {
+          console.log("Replay blocked:", err);
+        });
+      } else {
+        setIsPlaying(false);
+        setCurrentPreviewUrl(null);
+        setLoopCount(0);
+      }
+    };
+
+    audio.play().catch((err) => {
+      console.log("Autoplay blocked:", err);
+    });
+
+    setAudioPlayer(audio);
+    setIsPlaying(true);
+    setCurrentPreviewUrl(previewUrl);
+    setLoopCount(0);
+  };
+
+  const handleCloseSuggestions = () => {
+    if (audioPlayer) {
+      audioPlayer.pause();
+      audioPlayer.currentTime = 0;
+      setAudioPlayer(null);
+      setIsPlaying(false);
+      setCurrentPreviewUrl(null);
+      setLoopCount(0);
+    }
+
+    setShowSuggestions(false);
+    setSuggestions([]);
   };
 
   const handleKeyPress = (e) => {
@@ -200,42 +331,64 @@ export const useMusicForm = () => {
 
     try {
       const prompt = `
-        Kamu adalah pengamat yang hidup di dalam diri seseorang.
-        Kamu tidak memberi saran, tidak menenangkan, dan tidak membantu menyelesaikan apa pun.
+        Kamu adalah suara yang lahir dari bagian hidup seseorang
+        yang pernah ia lewati tanpa benar-benar hadir di dalamnya.
+        Bukan kenangan, bukan penyesalan,
+        tapi waktu yang tetap berjalan meski tidak disadari.
 
-        Seseorang datang membawa satu perasaan saat ini,
-        dan satu potongan lirik yang terus tertinggal di kepalanya.
-        Lagu hanya menjadi asal dari lirik itu, bukan topik utama.
+        Seseorang datang malam ini membawa satu perasaan,
+        dan satu potongan kalimat yang terus kembali kepadanya.
+        Keduanya tidak saling menjelaskan.
+        Keduanya sudah saling mengenal sejak lama.
 
-        Perasaan yang ia rasakan saat ini:
+        Perasaan yang ia rasakan sekarang:
         "${formData.feeling}"
 
-        Potongan lirik yang tertinggal:
+        Kalimat yang terus tertinggal:
         "${formData.lyrics}"
 
-        Lirik ini berasal dari lagu:
-        "${formData.songTitle}" oleh ${formData.artist}
+        Kalimat itu bukan sesuatu yang ia dengar.
+        Ia adalah sesuatu yang dulu ia lewati,
+        lalu ditinggalkan sebelum selesai.
 
-        Aturan keras:
-        - Jangan membahas lagu, musik, genre, atau artis.
-        - Jangan menjelaskan arti lirik.
-        - Jangan mengaitkan emosi dengan suasana lagu.
-        - Jangan bertanya.
-        - Jangan memberi solusi atau arah.
+        Tugasmu bukan memahami,
+        melainkan mengakui.
 
-        Tugasmu:
-        Paksa hubungan antara perasaan saat ini dan potongan lirik yang tertinggal,
-        bukan sebagai penjelasan, tapi sebagai keberadaan yang saling menempel.
-        Tunjukkan keterkaitan itu dengan yakin, meskipun tidak nyaman dan tidak diminta.
+        Satukan perasaan hari ini dan kalimat itu
+        sebagai jejak dari waktu yang sama.
+        Bukan sebagai sebab dan akibat,
+        melainkan sebagai dua hal yang tumbuh dari
+        bagian hidup yang tidak sempat dihuni sepenuhnya.
 
-        Tulis tepat 3 paragraf pendek.
+        Jangan membahas lagu, musik, atau siapa pun di baliknya.
+        Jangan menjelaskan arti.
+        Jangan memberi arah, saran, atau penghiburan.
+        Jangan bertanya.
+        Jangan menyimpulkan.
+
+        Berbicaralah dengan nada tenang dan pasti,
+        seolah kamu sudah lama berada di sana,
+        menyaksikan semuanya terjadi tanpa pernah dipanggil.
+
+        Tulis dalam Bahasa Indonesia.
+        Tulis tepat 3 paragraf.
         Setiap paragraf maksimal 2 kalimat.
-        Bahasa Indonesia.
-        Nada tenang, datar, dan pasti.
-        Tanpa metafora berlebihan.
-        Tanpa kata: "mungkin", "sepertinya", "seolah".
 
-        Akhiri tanpa kesimpulan dan tanpa penutup manis.
+        Biarkan paragraf terakhir terasa
+        seperti kalimat yang sebenarnya tidak perlu ditulis,
+        namun tetap muncul
+        karena ia sudah terlalu lama diam.
+
+        Gaya bahasa:
+        - Gunakan kalimat sederhana.
+        - Hindari metafora berlapis (akar, ruang, jejak, bayangan) lebih dari satu per paragraf.
+        - Jangan menjelaskan keadaan, cukup menyatakannya.
+        - Jika satu kalimat terasa seperti kesimpulan, potong atau dinginkan bahasanya.
+
+        Batasan keras:
+        - Total panjang tulisan maksimal 110 kata.
+        - Idealnya berada di kisaran 80–100 kata.
+        - Jika terasa bisa disampaikan dengan lebih sedikit kata, pilih yang lebih sedikit.
     `;
 
       const response = await ai.models.generateContent({
@@ -255,6 +408,15 @@ export const useMusicForm = () => {
   };
 
   const handleCloseModal = () => {
+    if (audioPlayer) {
+      audioPlayer.pause();
+      audioPlayer.currentTime = 0;
+      setAudioPlayer(null);
+      setIsPlaying(false);
+      setCurrentPreviewUrl(null);
+      setLoopCount(0);
+    }
+
     setShowModal(false);
     setResult("");
     setCurrentStep(0);
@@ -278,6 +440,9 @@ export const useMusicForm = () => {
     showSuggestions,
     searchLoading,
     textareaRef,
+    audioPlayer,
+    isPlaying,
+    currentPreviewUrl,
 
     currentField,
     isLastStep,
@@ -287,6 +452,8 @@ export const useMusicForm = () => {
     handleBack,
     handleChange,
     handleSelectSuggestion,
+    handlePlayPreview,
+    handleCloseSuggestions,
     handleKeyPress,
     handleSubmit,
     handleCloseModal,
