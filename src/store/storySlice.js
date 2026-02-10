@@ -71,7 +71,15 @@ const storySlice = createSlice({
       state.language = state.language === "id" ? "en" : "id";
     },
 
-    resetStory: () => initialState,
+    resetStory: (state) => {
+      const currentTheme = state.theme;
+      const currentLanguage = state.language;
+
+      Object.assign(state, initialState);
+
+      state.theme = currentTheme;
+      state.language = currentLanguage;
+    },
 
     resetUI: (state) => {
       state.showTap = false;

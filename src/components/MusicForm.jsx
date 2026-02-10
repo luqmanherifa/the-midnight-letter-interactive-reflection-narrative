@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useMusicForm, STEPS } from "../hooks/useMusicForm";
 import AnimatedBackground from "./AnimatedBackground";
+import { SettingsPanel } from "./StoryComponents";
 
 export default function MusicForm() {
   const {
@@ -57,6 +58,7 @@ export default function MusicForm() {
       className={`min-h-screen ${currentTheme.bg} ${currentTheme.text} transition-colors duration-500 flex items-center justify-center relative`}
     >
       <AnimatedBackground theme={theme} />
+      <SettingsPanel homeRoute="/" />
       <div className="w-full max-w-[428px] min-h-screen relative z-10">
         <div className="min-h-screen flex flex-col items-center justify-center px-6 py-16">
           <div className="w-full max-w-sm">
@@ -433,7 +435,6 @@ export default function MusicForm() {
           </div>
         </div>
       </div>
-
       <AnimatePresence>
         {showModal && (
           <motion.div

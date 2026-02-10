@@ -2,11 +2,11 @@ import { motion } from "framer-motion";
 import { TypewriterText } from "./TypewriterText";
 import { useState, useRef, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { toggleTheme, toggleLanguage } from "../store/storySlice";
+import { toggleTheme, toggleLanguage, resetStory } from "../store/storySlice";
 import { UI_TRANSLATIONS, TITLE_TRANSLATIONS } from "../constant/translations";
 import { useNavigate } from "react-router-dom";
 
-export function SettingsPanel() {
+export function SettingsPanel({ homeRoute = "/distance" }) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { theme, language } = useSelector((state) => state.story);
@@ -41,6 +41,13 @@ export function SettingsPanel() {
     setVolume(newVolume);
   };
 
+  const handleHomeClick = () => {
+    if (homeRoute === "/") {
+      dispatch(resetStory());
+    }
+    navigate(homeRoute);
+  };
+
   return (
     <>
       <audio ref={audioRef} src={musicUrl} loop />
@@ -49,9 +56,9 @@ export function SettingsPanel() {
         <div className="w-full max-w-[428px] relative pointer-events-auto">
           <div className="absolute top-6 right-6 flex items-center gap-0">
             <button
-              onClick={() => navigate("/distance")}
+              onClick={handleHomeClick}
               className="w-6 h-6 flex items-center justify-center rounded-full opacity-30 hover:opacity-60 transition-opacity"
-              aria-label="Distance"
+              aria-label="Home"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
