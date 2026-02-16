@@ -9,7 +9,7 @@ export default function MusicPlayer() {
   const [showControls, setShowControls] = useState(true);
   const audioRef = useRef(null);
 
-  const musicUrl = "/wildflower.mp3";
+  const musicUrl = "/midnightletter.mp3";
 
   useEffect(() => {
     if (audioRef.current) {
@@ -125,8 +125,8 @@ export default function MusicPlayer() {
                     isDark ? "border-stone-700" : "border-stone-300"
                   }`}
                 >
-                  <div className="font-medium">WILDFLOWER</div>
-                  <div className="text-[10px]">Billie Eilish</div>
+                  <div className="font-medium">Midnight Letter</div>
+                  <div className="text-[10px]">IKE</div>
                 </div>
 
                 <button

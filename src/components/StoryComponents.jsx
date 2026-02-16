@@ -17,7 +17,7 @@ export function SettingsPanel({ homeRoute = "/distance" }) {
   const audioRef = useRef(null);
   const t = UI_TRANSLATIONS[language];
 
-  const musicUrl = "/wildflower.mp3";
+  const musicUrl = "/midnightletter.mp3";
 
   useEffect(() => {
     if (audioRef.current) {
@@ -123,8 +123,10 @@ export function SettingsPanel({ homeRoute = "/distance" }) {
               >
                 <div className="space-y-3">
                   <div className="text-center">
-                    <p className="text-xs text-stone-400 mb-1">WILDFLOWER</p>
-                    <p className="text-[10px] text-stone-500">Billie Eilish</p>
+                    <p className="text-xs text-stone-400 mb-1">
+                      Midnight Letter
+                    </p>
+                    <p className="text-[10px] text-stone-500">IKE</p>
                   </div>
 
                   <button
