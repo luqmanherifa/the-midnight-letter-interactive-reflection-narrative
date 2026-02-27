@@ -36,6 +36,79 @@ export const TITLE_TRANSLATIONS = {
   },
 };
 
+export const JARAK_TRANSLATIONS = {
+  id: {
+    title: "Jarak",
+    subtitle1: "Antara perasaan yang kamu bawa",
+    subtitle2: "dan lirik yang tertinggal.",
+    stepOf: (current, total) => `${current} dari ${total}`,
+    listeningPreview: "Mendengarkan preview...",
+    searchResult: "Atau pilih dari hasil pencarian",
+    submit: "Lihat jaraknya",
+    next: "Lanjut",
+    back: "Kembali",
+    close: "tutup",
+    listening: "Mendengarkan...",
+    steps: [
+      {
+        id: "feeling",
+        label: "Perasaan kamu saat ini",
+        placeholder: "Apa yang kamu rasakan malam ini",
+      },
+      {
+        id: "lyrics",
+        label: "Penggalan lirik yang tertinggal",
+        placeholder: "Baris yang terus kembali di kepala",
+      },
+      {
+        id: "songTitle",
+        label: "Nama lagu itu",
+        placeholder: "Judul yang mengiringi perasaan ini",
+      },
+      {
+        id: "artist",
+        label: "Siapa yang menyanyikan",
+        placeholder: "Suara siapa yang kamu dengar",
+      },
+    ],
+  },
+  en: {
+    title: "Distance",
+    subtitle1: "Between the feeling you carry",
+    subtitle2: "and the lyric left behind.",
+    stepOf: (current, total) => `${current} of ${total}`,
+    listeningPreview: "Listening to preview...",
+    searchResult: "Or choose from search results",
+    submit: "See the distance",
+    next: "Next",
+    back: "Back",
+    close: "close",
+    listening: "Listening...",
+    steps: [
+      {
+        id: "feeling",
+        label: "How you feel right now",
+        placeholder: "What you feel tonight",
+      },
+      {
+        id: "lyrics",
+        label: "A lyric fragment left behind",
+        placeholder: "The line that keeps coming back",
+      },
+      {
+        id: "songTitle",
+        label: "The name of that song",
+        placeholder: "The title that accompanies this feeling",
+      },
+      {
+        id: "artist",
+        label: "Who sings it",
+        placeholder: "Whose voice you hear",
+      },
+    ],
+  },
+};
+
 export const SCREEN_TRANSLATIONS = {
   id: {},
   en: {

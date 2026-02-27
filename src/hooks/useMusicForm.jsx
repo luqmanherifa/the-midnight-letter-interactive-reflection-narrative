@@ -5,34 +5,7 @@ const ai = new GoogleGenAI({
   apiKey: import.meta.env.VITE_GEMINI_API_KEY,
 });
 
-export const STEPS = [
-  {
-    id: "feeling",
-    label: "Perasaan kamu saat ini",
-    placeholder: "Apa yang kamu rasakan malam ini",
-    type: "input",
-  },
-  {
-    id: "lyrics",
-    label: "Penggalan lirik yang tertinggal",
-    placeholder: "Baris yang terus kembali di kepala",
-    type: "auto-expand",
-  },
-  {
-    id: "songTitle",
-    label: "Nama lagu itu",
-    placeholder: "Judul yang mengiringi perasaan ini",
-    type: "input",
-  },
-  {
-    id: "artist",
-    label: "Siapa yang menyanyikan",
-    placeholder: "Suara siapa yang kamu dengar",
-    type: "input",
-  },
-];
-
-export const useMusicForm = () => {
+export const useMusicForm = (steps) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
     feeling: "",
@@ -52,13 +25,10 @@ export const useMusicForm = () => {
   const [loopCount, setLoopCount] = useState(0);
   const [isFromSuggestion, setIsFromSuggestion] = useState(false);
   const debounceTimer = useRef(null);
-  const textareaRef = useRef(null);
 
   useEffect(() => {
     return () => {
-      if (debounceTimer.current) {
-        clearTimeout(debounceTimer.current);
-      }
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
     };
   }, []);
 
@@ -72,24 +42,9 @@ export const useMusicForm = () => {
     };
   }, [audioPlayer]);
 
-  const autoResizeTextarea = () => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = "auto";
-      const newHeight = Math.min(textarea.scrollHeight, 120);
-      textarea.style.height = `${newHeight}px`;
-    }
-  };
-
-  useEffect(() => {
-    if (textareaRef.current && currentStep === 1) {
-      textareaRef.current.style.height = "50px";
-      autoResizeTextarea();
-    }
-  }, [currentStep]);
-
-  const currentField = STEPS[currentStep].id;
-  const isLastStep = currentStep === STEPS.length - 1;
+  const currentStepData = steps?.[currentStep];
+  const currentField = currentStepData?.id ?? "feeling";
+  const isLastStep = currentStep === (steps?.length ?? 4) - 1;
   const canProceed = formData[currentField].trim().length > 0;
 
   const searchSongs = async (query) => {
@@ -97,19 +52,15 @@ export const useMusicForm = () => {
       setSuggestions([]);
       return;
     }
-
     setSearchLoading(true);
-
     try {
       const response = await fetch(
         `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=8`,
       );
       const data = await response.json();
-
       if (data.results) {
         const uniqueSongs = [];
         const seen = new Set();
-
         for (const item of data.results) {
           const key = `${item.trackName}-${item.artistName}`;
           if (!seen.has(key)) {
@@ -122,7 +73,6 @@ export const useMusicForm = () => {
             });
           }
         }
-
         setSuggestions(uniqueSongs);
       }
     } catch (error) {
@@ -134,31 +84,17 @@ export const useMusicForm = () => {
   };
 
   const handleNext = () => {
-    if (canProceed && !isLastStep) {
-      setCurrentStep(currentStep + 1);
-    }
+    if (canProceed && !isLastStep) setCurrentStep(currentStep + 1);
   };
 
   const handleBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
+    if (currentStep > 0) setCurrentStep(currentStep - 1);
   };
 
   const handleChange = (value) => {
     setFormData({ ...formData, [currentField]: value });
-
-    if (currentField === "lyrics") {
-      setTimeout(autoResizeTextarea, 0);
-    }
-
-    if (
-      currentField === "lyrics" ||
-      currentField === "songTitle" ||
-      currentField === "artist"
-    ) {
+    if (["lyrics", "songTitle", "artist"].includes(currentField)) {
       if (debounceTimer.current) clearTimeout(debounceTimer.current);
-
       debounceTimer.current = setTimeout(() => {
         if (value.trim().length >= 3) {
           searchSongs(value);
@@ -176,7 +112,6 @@ export const useMusicForm = () => {
       audioPlayer.pause();
       audioPlayer.currentTime = 0;
     }
-
     if (currentField === "lyrics") {
       setFormData({
         ...formData,
@@ -185,14 +120,7 @@ export const useMusicForm = () => {
         artist: suggestion.artist,
       });
       setIsFromSuggestion(true);
-    } else if (currentField === "songTitle") {
-      setFormData({
-        ...formData,
-        songTitle: suggestion.title,
-        artist: suggestion.artist,
-      });
-      setIsFromSuggestion(true);
-    } else if (currentField === "artist") {
+    } else if (currentField === "songTitle" || currentField === "artist") {
       setFormData({
         ...formData,
         songTitle: suggestion.title,
@@ -200,56 +128,40 @@ export const useMusicForm = () => {
       });
       setIsFromSuggestion(true);
     }
-
     if (suggestion.previewUrl) {
       const audio = new Audio(suggestion.previewUrl);
       audio.volume = 0.5;
-
       let currentLoop = 0;
-
       audio.onended = () => {
         currentLoop++;
         setLoopCount(currentLoop);
-
         if (currentLoop < 3) {
           audio.currentTime = 0;
-          audio.play().catch((err) => {
-            console.log("Replay blocked:", err);
-          });
+          audio.play().catch(() => {});
         } else {
           setIsPlaying(false);
           setLoopCount(0);
         }
       };
-
-      audio.play().catch((err) => {
-        console.log("Autoplay blocked:", err);
-      });
-
+      audio.play().catch(() => {});
       setAudioPlayer(audio);
       setIsPlaying(true);
       setCurrentPreviewUrl(suggestion.previewUrl);
       setLoopCount(0);
     }
-
     setShowSuggestions(false);
     setSuggestions([]);
-
-    if (currentStep < STEPS.length - 1) {
-      setTimeout(() => {
-        setCurrentStep(currentStep + 1);
-      }, 300);
+    if (currentStep < (steps?.length ?? 4) - 1) {
+      setTimeout(() => setCurrentStep(currentStep + 1), 300);
     }
   };
 
   const handlePlayPreview = (e, previewUrl) => {
     e.stopPropagation();
-
     if (audioPlayer) {
       audioPlayer.pause();
       audioPlayer.currentTime = 0;
     }
-
     if (currentPreviewUrl === previewUrl && isPlaying) {
       setAudioPlayer(null);
       setIsPlaying(false);
@@ -257,32 +169,22 @@ export const useMusicForm = () => {
       setLoopCount(0);
       return;
     }
-
     const audio = new Audio(previewUrl);
     audio.volume = 0.5;
-
     let currentLoop = 0;
-
     audio.onended = () => {
       currentLoop++;
       setLoopCount(currentLoop);
-
       if (currentLoop < 3) {
         audio.currentTime = 0;
-        audio.play().catch((err) => {
-          console.log("Replay blocked:", err);
-        });
+        audio.play().catch(() => {});
       } else {
         setIsPlaying(false);
         setCurrentPreviewUrl(null);
         setLoopCount(0);
       }
     };
-
-    audio.play().catch((err) => {
-      console.log("Autoplay blocked:", err);
-    });
-
+    audio.play().catch(() => {});
     setAudioPlayer(audio);
     setIsPlaying(true);
     setCurrentPreviewUrl(previewUrl);
@@ -298,41 +200,26 @@ export const useMusicForm = () => {
       setCurrentPreviewUrl(null);
       setLoopCount(0);
     }
-
     setShowSuggestions(false);
     setSuggestions([]);
   };
 
   const handleKeyPress = (e) => {
-    if (STEPS[currentStep].type === "auto-expand" && e.key === "Enter") {
-      return;
-    }
-
-    if (
-      e.key === "Enter" &&
-      !e.shiftKey &&
-      STEPS[currentStep].type === "input"
-    ) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       if (canProceed) {
-        if (isLastStep) {
-          handleSubmit(e);
-        } else {
-          handleNext();
-        }
+        if (isLastStep) handleSubmit(e);
+        else handleNext();
       }
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!canProceed) return;
-
     setLoading(true);
     setResult("");
     setShowModal(true);
-
     try {
       const prompt = `
         Tulis suara dari waktu yang pernah dilewati,
@@ -370,17 +257,15 @@ export const useMusicForm = () => {
         - Hindari metafora berulang
         - Jangan menyimpulkan
         - Jangan bertanya
-s
+
         Akhiri dengan kalimat yang terasa
         seperti suara yang berhenti,
         bukan penutup.
-    `;
-
+      `;
       const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-1.5-flash",
         contents: prompt,
       });
-
       setResult(response.text);
     } catch (error) {
       console.error(error);
@@ -401,16 +286,10 @@ s
       setCurrentPreviewUrl(null);
       setLoopCount(0);
     }
-
     setShowModal(false);
     setResult("");
     setCurrentStep(0);
-    setFormData({
-      feeling: "",
-      lyrics: "",
-      songTitle: "",
-      artist: "",
-    });
+    setFormData({ feeling: "", lyrics: "", songTitle: "", artist: "" });
     setSuggestions([]);
     setShowSuggestions(false);
     setIsFromSuggestion(false);
@@ -425,16 +304,13 @@ s
     suggestions,
     showSuggestions,
     searchLoading,
-    textareaRef,
     audioPlayer,
     isPlaying,
     currentPreviewUrl,
     isFromSuggestion,
-
     currentField,
     isLastStep,
     canProceed,
-
     handleNext,
     handleBack,
     handleChange,
