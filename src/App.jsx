@@ -11,9 +11,16 @@ import {
   SettingsPanel,
 } from "./components/StoryComponents";
 import AnimatedBackground from "./components/AnimatedBackground";
+import MusicForm from "./components/MusicForm";
 
 export default function App() {
   const { theme } = useSelector((state) => state.story);
+  const [showMusicForm, setShowMusicForm] = useState(false);
+
+  const audioRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [volume, setVolume] = useState(0.5);
+
   const {
     screen,
     screenKey,
@@ -34,6 +41,23 @@ export default function App() {
 
   const [showButtons, setShowButtons] = useState(false);
   const contentRef = useRef(null);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, [volume]);
+
+  const togglePlay = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
 
   useEffect(() => {
     setShowButtons(false);
@@ -83,55 +107,72 @@ export default function App() {
     <div
       className={`min-h-screen ${currentTheme.bg} ${currentTheme.text} transition-colors duration-500 flex items-center justify-center relative`}
     >
+      <audio ref={audioRef} src="/midnightletter.mp3" loop />
+
       <AnimatedBackground theme={theme} />
-      <SettingsPanel />
-      <div className="w-full max-w-[428px] min-h-screen relative z-10">
-        {!isTitle && <ProgressIndicator currentId={currentId} />}
-        <div className="min-h-screen flex flex-col items-center justify-center px-6">
-          <div
-            key={screenKey}
-            ref={contentRef}
-            className="w-full max-w-sm"
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            {isTitle && <TitleScreen />}
-            {!isTitle && (
-              <div className="w-full text-center">
-                <TextContent
-                  lines={screen.lines}
-                  visibleLines={visibleLines}
-                  onTypewriterComplete={handleTypewriterComplete}
-                />
-                {isChoice && showChoices && (
-                  <ChoiceButtons
-                    choices={screen.choices}
-                    choiceSelected={choiceSelected}
-                    onChoice={handleChoice}
-                    show={showButtons}
+
+      <SettingsPanel
+        onTogglePage={() => setShowMusicForm((prev) => !prev)}
+        audioRef={audioRef}
+        isPlaying={isPlaying}
+        volume={volume}
+        onTogglePlay={togglePlay}
+        onVolumeChange={setVolume}
+      />
+
+      {!showMusicForm && (
+        <div className="w-full max-w-[428px] min-h-screen relative z-10">
+          {!isTitle && <ProgressIndicator currentId={currentId} />}
+          <div className="min-h-screen flex flex-col items-center justify-center px-6">
+            <div
+              key={screenKey}
+              ref={contentRef}
+              className="w-full max-w-sm"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {isTitle && <TitleScreen />}
+              {!isTitle && (
+                <div className="w-full text-center">
+                  <TextContent
+                    lines={screen.lines}
+                    visibleLines={visibleLines}
+                    onTypewriterComplete={handleTypewriterComplete}
                   />
-                )}
-              </div>
-            )}
+                  {isChoice && showChoices && (
+                    <ChoiceButtons
+                      choices={screen.choices}
+                      choiceSelected={choiceSelected}
+                      onChoice={handleChoice}
+                      show={showButtons}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
           </div>
+          <BottomControls
+            showTap={showButtons}
+            isChoice={isChoice}
+            isEnd={isEnd}
+            isTitle={isTitle}
+            currentId={currentId}
+            showChoices={showChoices}
+            choiceSelected={choiceSelected}
+            choiceReady={choiceReady}
+            onNext={handleNext}
+            onToggleChoices={toggleChoices}
+          />
         </div>
-        <BottomControls
-          showTap={showButtons}
-          isChoice={isChoice}
-          isEnd={isEnd}
-          isTitle={isTitle}
-          currentId={currentId}
-          showChoices={showChoices}
-          choiceSelected={choiceSelected}
-          choiceReady={choiceReady}
-          onNext={handleNext}
-          onToggleChoices={toggleChoices}
-        />
-      </div>
+      )}
+
+      {showMusicForm && (
+        <MusicForm onTogglePage={() => setShowMusicForm(false)} />
+      )}
     </div>
   );
 }
