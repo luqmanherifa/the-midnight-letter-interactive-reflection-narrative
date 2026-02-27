@@ -5,7 +5,7 @@ const ai = new GoogleGenAI({
   apiKey: import.meta.env.VITE_GEMINI_API_KEY,
 });
 
-export const useMusicForm = (steps) => {
+export const useMusicForm = (steps, fallbackResult) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
     feeling: "",
@@ -14,6 +14,7 @@ export const useMusicForm = (steps) => {
     artist: "",
   });
   const [result, setResult] = useState("");
+  const [isFallback, setIsFallback] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
@@ -219,6 +220,7 @@ export const useMusicForm = (steps) => {
     if (!canProceed) return;
     setLoading(true);
     setResult("");
+    setIsFallback(false);
     setShowModal(true);
     try {
       const prompt = `
@@ -263,15 +265,18 @@ export const useMusicForm = (steps) => {
         bukan penutup.
       `;
       const response = await ai.models.generateContent({
-        model: "gemini-1.5-flash",
+        model: "gemini-3-flash-preview",
         contents: prompt,
       });
       setResult(response.text);
+      setIsFallback(false);
     } catch (error) {
       console.error(error);
       setResult(
-        "Malam ini tidak ada kata. Tapi yang tertinggal tetap berada di sana.",
+        fallbackResult ??
+          "Malam ini tidak ada kata. Tapi yang tertinggal tetap berada di sana.",
       );
+      setIsFallback(true);
     } finally {
       setLoading(false);
     }
@@ -288,6 +293,7 @@ export const useMusicForm = (steps) => {
     }
     setShowModal(false);
     setResult("");
+    setIsFallback(false);
     setCurrentStep(0);
     setFormData({ feeling: "", lyrics: "", songTitle: "", artist: "" });
     setSuggestions([]);
@@ -299,6 +305,7 @@ export const useMusicForm = (steps) => {
     currentStep,
     formData,
     result,
+    isFallback,
     loading,
     showModal,
     suggestions,

@@ -15,6 +15,7 @@ export default function MusicForm({ onTogglePage }) {
     currentStep,
     formData,
     result,
+    isFallback,
     loading,
     showModal,
     suggestions,
@@ -36,7 +37,7 @@ export default function MusicForm({ onTogglePage }) {
     handleKeyPress,
     handleSubmit,
     handleCloseModal,
-  } = useMusicForm(steps);
+  } = useMusicForm(steps, t.fallbackResult);
 
   const isDark = theme === "dark";
 
@@ -450,7 +451,9 @@ export default function MusicForm({ onTogglePage }) {
                   <>
                     <div className="mb-8">
                       <p
-                        className={`text-sm tracking-wide leading-relaxed ${tc.text}`}
+                        className={`text-sm tracking-wide leading-relaxed ${tc.text} ${
+                          isFallback ? "text-center" : "text-left"
+                        }`}
                       >
                         {result}
                       </p>

@@ -44,11 +44,13 @@ export const JARAK_TRANSLATIONS = {
     stepOf: (current, total) => `${current} dari ${total}`,
     listeningPreview: "Mendengarkan preview...",
     searchResult: "Atau pilih dari hasil pencarian",
-    submit: "Lihat jaraknya",
-    next: "Lanjut",
-    back: "Kembali",
+    submit: "lihat jaraknya",
+    next: "lanjut",
+    back: "kembali",
     close: "tutup",
     listening: "Mendengarkan...",
+    fallbackResult:
+      "Malam ini tidak ada kata. Tapi yang tertinggal tetap berada di sana.",
     steps: [
       {
         id: "feeling",
@@ -79,11 +81,12 @@ export const JARAK_TRANSLATIONS = {
     stepOf: (current, total) => `${current} of ${total}`,
     listeningPreview: "Listening to preview...",
     searchResult: "Or choose from search results",
-    submit: "See the distance",
-    next: "Next",
-    back: "Back",
+    submit: "see the distance",
+    next: "next",
+    back: "back",
     close: "close",
     listening: "Listening...",
+    fallbackResult: "No words tonight. But what remains is still there.",
     steps: [
       {
         id: "feeling",
